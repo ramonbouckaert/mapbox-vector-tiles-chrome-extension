@@ -206,33 +206,33 @@ chrome.storage.local.get(
         }
         const extra = { isPending: false, isValid: isValid, isEmpty: isNoContent }
 
-        const requestFinished = async () => {
+        const requestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
           await onFinishedRequest(pendingEntry, {
             ...pendingEntry,
             statistics: statistics,
             status: httpEntry.response.status,
-            tile: content,
+            tile: data ? new Blob([data], { type: "application/vnd.mapbox-vector-tile" }) : undefined,
             tileSize: (extra.isValid && data && data.length) || undefined,
             endOrder: ++endOrder,
             extra: extra,
           })
         }
 
-        const emptyRequestFinished = async () => {
+        const emptyRequestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
           extra.isEmpty = true
           if (!trackEmptyResponse) {
             await onRemoveEntry(pendingEntry)
           }
-          await requestFinished()
+          await requestFinished(data)
         }
 
-        const notSuccessfulRequestFinished = async () => {
+        const notSuccessfulRequestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
           extra.isValid = false
           if (trackOnlySuccessfulResponse) {
             await onRemoveEntry(pendingEntry)
             return
           }
-          await requestFinished()
+          await requestFinished(data)
         }
 
         if (!extra.isValid) {
@@ -245,7 +245,7 @@ chrome.storage.local.get(
           return
         }
 
-        let data: Uint8Array
+        let data: Uint8Array<ArrayBuffer>
         if (encoding === 'base64') {
           data = Uint8Array.from(atob(content), (c) => c.charCodeAt(0))
         } else {
@@ -254,12 +254,12 @@ chrome.storage.local.get(
 
         if (content == undefined || (decodedBodySize !== -1 && data.length !== decodedBodySize)) {
           onWrongContent(pendingEntry, content, data, decodedBodySize)
-          await notSuccessfulRequestFinished()
+          await notSuccessfulRequestFinished(data)
           return
         }
 
         if (!data.length) {
-          await emptyRequestFinished()
+          await emptyRequestFinished(data)
           return
         }
 
@@ -269,12 +269,12 @@ chrome.storage.local.get(
           tile = new VectorTile(new Pbf(data))
         } catch (err) {
           onWrongContent(pendingEntry, content, data, decodedBodySize, err)
-          await notSuccessfulRequestFinished()
+          await notSuccessfulRequestFinished(data)
           return
         }
 
         if (isTileEmpty(tile)) {
-          await emptyRequestFinished()
+          await emptyRequestFinished(data)
           return
         }
 
@@ -287,7 +287,7 @@ chrome.storage.local.get(
         })
         statistics.layersCount = layersNames.length
 
-        await requestFinished()
+        await requestFinished(data)
       })
     })
   },

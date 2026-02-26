@@ -1,14 +1,10 @@
 import Pbf from 'pbf'
-import { VectorTile } from '@mapbox/vector-tile'
-import type { Feature, GeoJSON } from 'geojson'
+import {VectorTile} from '@mapbox/vector-tile'
+import type {Feature, GeoJSON} from 'geojson'
 import prettyMilliseconds from 'pretty-ms'
 import prettyBytes from 'pretty-bytes'
-import {
-  DevToolsMessage,
-  HTMLDivElementWithEntry,
-  TableEntry,
-} from './types'
-import { Hashery } from 'hashery'
+import {DevToolsMessage, HTMLDivElementWithEntry, TableEntry,} from './types'
+import {Hashery} from 'hashery'
 import {isDevToolsMessage, isTableEntry} from "./utils";
 
 const hasher = new Hashery()
@@ -128,15 +124,6 @@ const tileToGeoJson = (
   }, {})
 }
 
-const uint8ArrayToBase64 = (bytes: Uint8Array<ArrayBuffer>): string => {
-  let binary = ''
-  let len = bytes.byteLength
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return window.btoa(binary)
-}
-
 const adjustInputTextWidth = (input: HTMLInputElement) => {
   const style = window.getComputedStyle(input)
   const textWidth = getTextWidth(input.value, style.fontSize, style.fontFamily, style.fontWeight)
@@ -232,18 +219,12 @@ const onDocumentClick = (e: MouseEvent) => {
 
 document.addEventListener('click', onDocumentClick)
 
-const base64TileToUint8Array = async (
+const getVectorTileFromTileData = async (
   entry: TableEntry
 ): Promise<VectorTile> => {
-  const data = entry.tile
-    ? typeof entry.tile === 'string'
-      ? Uint8Array.from(atob(entry.tile), (c) => c.charCodeAt(0))
-      : entry.tile
-    : undefined
+  if (!entry.tile) throw Error("Entry did not have tile data")
 
-  if (!data) throw Error("Entry did not have tile data")
-
-  return new VectorTile(new Pbf(data))
+  return new VectorTile(new Pbf(await entry.tile.arrayBuffer()))
 }
 
 const prepareGeoJsonTile = async (
@@ -253,7 +234,7 @@ const prepareGeoJsonTile = async (
   const errors: unknown[] = [];
 
   try {
-    vectorTile = await base64TileToUint8Array(entry);
+    vectorTile = await getVectorTileFromTileData(entry);
   } catch (error) {
     errors.push(error);
     const message =
@@ -271,7 +252,7 @@ const prepareGeoJsonTile = async (
     await fetchTile(entry)
 
     try {
-      vectorTile = await base64TileToUint8Array(entry)
+      vectorTile = await getVectorTileFromTileData(entry)
     } catch (error) {
       errors.push(error)
     }
@@ -309,31 +290,29 @@ const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
   const requestUrl = entry.url
   const a = document.createElement('a')
   a.setAttribute('href', requestUrl)
-  a.addEventListener('click', (e) => {
+  a.addEventListener('click', async (e) => {
     e.preventDefault()
     e.stopPropagation()
 
     const fileName = entry.z + '_' + entry.x + '_' + entry.y + '.mvt'
     if (entry.tile) {
-      saveFromBinaryData(entry.tile, fileName)
+      saveFromBinaryData(await entry.tile.arrayBuffer(), fileName)
     } else {
-      fetchTile(entry)
-        .then((buffer) => {
-          saveFromBinaryData(new Uint8Array(buffer), fileName)
-        })
-        .catch((error) => {
-          const message =
-            'Loading failed for tile ' +
-            '{z: ' +
-            entry.z +
-            ', x: ' +
-            entry.x +
-            ', y: ' +
-            entry.y +
-            '}'
-          console.error(message, error)
-          chrome.devtools.inspectedWindow.eval("console.error('" + message + "')")
-        })
+      try {
+        saveFromBinaryData(await fetchTile(entry), fileName)
+      } catch (error) {
+        const message =
+          'Loading failed for tile ' +
+          '{z: ' +
+          entry.z +
+          ', x: ' +
+          entry.x +
+          ', y: ' +
+          entry.y +
+          '}'
+        console.error(message, error)
+        chrome.devtools.inspectedWindow.eval("console.error('" + message + "')")
+      }
     }
     return false
   })
@@ -351,20 +330,15 @@ const fetchTile = async (entry: TableEntry): Promise<ArrayBuffer> => {
   }
   const res = await window.fetch(entry.url, { method: 'GET', headers: headers })
   const buffer = await res.arrayBuffer()
-  const data = new Uint8Array(buffer)
-  entry.tile = uint8ArrayToBase64(data)
+  entry.tile = new Blob([buffer], { type: "application/vnd.mapbox-vector-tile" })
   return buffer
 }
 
 const saveFromBinaryData = (
-  arrayOrBase64Data: Uint8Array<ArrayBufferLike> | string,
+  arrayBuffer: ArrayBuffer,
   fileName: string,
 ) => {
-  const safe =
-    typeof arrayOrBase64Data === 'string'
-      ? Uint8Array.from(atob(arrayOrBase64Data), (c) => c.charCodeAt(0))
-      : new Uint8Array(arrayOrBase64Data)
-  const newBlob = new Blob([safe])
+  const newBlob = new Blob([arrayBuffer], { type: "application/vnd.mapbox-vector-tile" })
   const data = window.URL.createObjectURL(newBlob)
   const link = document.createElement('a')
   link.href = data
