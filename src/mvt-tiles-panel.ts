@@ -13,8 +13,8 @@ import {isDevToolsMessage, isTableEntry} from "./utils";
 
 const hasher = new Hashery()
 
-const hashTableEntry = (tableEntry: TableEntry): string => {
-  return hasher.toHashSync({
+const hashTableEntry = async (tableEntry: TableEntry): Promise<string> => {
+  return await hasher.toHash({
     x: tableEntry.x,
     y: tableEntry.y,
     z: tableEntry.z,
@@ -41,25 +41,25 @@ const onClear = async () => {
   await sendMessage({ type: 'CLEAR' })
 }
 
-const handleMessage = (message: DevToolsMessage): void => {
+const handleMessage = async (message: DevToolsMessage): Promise<void> => {
   switch (message.type) {
     case 'PENDING_ENTRY':
-      doAutoScrollableOperation(() => {
-        processPendingEntry(message.entry)
+      await doAutoScrollableOperation(async () => {
+        await processPendingEntry(message.entry)
       })
       return
     case 'FINISHED_ENTRY':
-      doAutoScrollableOperation(() => {
-        processFinishedEntry(message.entry)
+      await doAutoScrollableOperation(async () => {
+        await processFinishedEntry(message.entry)
       })
       return
     case 'REMOVED_ENTRY':
-      doAutoScrollableOperation(() => {
-        processRemovedEntry(message.entry)
+      await doAutoScrollableOperation(async () => {
+        await processRemovedEntry(message.entry)
       })
       return
     case 'REDRAW_ENTRIES':
-      doAutoScrollableOperation(() => {
+      await doAutoScrollableOperation(async () => {
         tilesTable.querySelectorAll('[role=row]').forEach((row) => row.remove())
         message.entries.forEach((entry) => {
           processPendingEntry(entry)
@@ -72,9 +72,9 @@ const handleMessage = (message: DevToolsMessage): void => {
   }
 }
 
-chrome.runtime.onMessage.addListener((message: unknown) => {
+chrome.runtime.onMessage.addListener(async (message: unknown) => {
   if (isDevToolsMessage(message)) {
-    handleMessage(message)
+    await handleMessage(message)
   }
 })
 
@@ -373,8 +373,8 @@ const saveFromBinaryData = (
   window.URL.revokeObjectURL(data)
 }
 
-const toRow = (div: HTMLDivElementWithEntry, entry: TableEntry): HTMLDivElementWithEntry => {
-  div.setAttribute('entry-hash', hashTableEntry(entry))
+const toRow = async (div: HTMLDivElementWithEntry, entry: TableEntry): Promise<HTMLDivElementWithEntry> => {
+  div.setAttribute('entry-hash', await hashTableEntry(entry))
   div.entry = entry
   div.setAttribute('role', 'row')
   return div
@@ -385,8 +385,8 @@ const toCell = (div: HTMLDivElement): HTMLDivElement => {
   return div
 }
 
-const findElementForEntry = (entry: TableEntry): HTMLDivElementWithEntry | null => {
-  const entryHash = hashTableEntry(entry)
+const findElementForEntry = async (entry: TableEntry): Promise<HTMLDivElementWithEntry | null> => {
+  const entryHash = await hashTableEntry(entry)
   const rowsNodeList = tilesTable.querySelectorAll('[role=row]')
   for (let i = 0; i < rowsNodeList.length; i++) {
     const rowElement = rowsNodeList.item(i)
@@ -433,7 +433,7 @@ const isNeedToScroll = (scrollableElement: HTMLElement): boolean => {
   )
 }
 
-const processPendingEntry = (entry: TableEntry) => {
+const processPendingEntry = async (entry: TableEntry) => {
   let rowNode: HTMLDivElementWithEntry,
     statusNode: HTMLDivElement,
     urlNode: HTMLDivElement,
@@ -446,7 +446,7 @@ const processPendingEntry = (entry: TableEntry) => {
     nEndedNode: HTMLDivElement
 
   tilesTable.appendChild(
-    (rowNode = toRow(document.createElement('div') as HTMLDivElementWithEntry, entry)),
+    (rowNode = await toRow(document.createElement('div') as HTMLDivElementWithEntry, entry)),
   )
   rowNode.appendChild((statusNode = toCell(document.createElement('div'))))
   rowNode.appendChild((zNode = toCell(document.createElement('div'))))
@@ -473,8 +473,8 @@ const processPendingEntry = (entry: TableEntry) => {
   rowNode.classList.add('pending-tile')
 }
 
-const processFinishedEntry = (entry: TableEntry) => {
-  const rowNode = findElementForEntry(entry)
+const processFinishedEntry = async (entry: TableEntry) => {
+  const rowNode = await findElementForEntry(entry)
   if (!rowNode) return
 
   const statusNode = rowNode.children[0]
@@ -510,17 +510,17 @@ const processFinishedEntry = (entry: TableEntry) => {
   }
 }
 
-const processRemovedEntry = (entry: TableEntry) => {
-  const rowNode = findElementForEntry(entry)
+const processRemovedEntry = async (entry: TableEntry) => {
+  const rowNode = await findElementForEntry(entry)
   if (!rowNode) {
     return
   }
   rowNode.remove()
 }
 
-const doAutoScrollableOperation = (operation: () => void) => {
+const doAutoScrollableOperation = async (operation: () => Promise<void>) => {
   const needToScroll = isNeedToScroll(tilesTable)
-  operation()
+  await operation()
   if (needToScroll && tilesTable.lastChild) {
     const lastRow = tilesTable.lastChild
     if (
