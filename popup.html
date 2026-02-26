@@ -1,45 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<style>
-		html, body {
-			white-space: nowrap;
-		}
+    <style>
+        :root {
+            color-scheme: light;
+            --background: #ffffff;
+            --text: #111111;
+        }
 
-		.body {
-			line-height: 35px;
-			font-size: 11px;
-			color: #376193;
-			font-weight: 500;
-		}
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+                --background: #0f1115;
+                --text: #e9e9ee;
+            }
+        }
 
-		ul {
-			list-style-type: none;
-			margin-block-start: 0;
-			margin-block-end: 0;
-			margin-inline-start: 0px;
-			margin-inline-end: 0px;
-			padding-inline-start: 10px;
-		}
-	</style>
+        html, body {
+            white-space: nowrap;
+            line-height: 35px;
+            font-size: 11px;
+            background-color: var(--background);
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        ul {
+            list-style-type: none;
+            margin-block-start: 0;
+            margin-block-end: 0;
+            margin-inline-start: 0;
+            margin-inline-end: 0;
+            padding-inline-start: 10px;
+        }
+    </style>
+    <title>Mapbox Vector Tiles</title>
 </head>
 <body>
 <div class="content">
-	Used libraries:
-	<ul>
-		<li><a href="https://github.com/mapbox/pbf/blob/master/LICENSE">mapbox/pbf 3.2.0</a></li>
-		<li><a href="https://github.com/mapbox/vector-tile-js/blob/master/LICENSE.txt">mapbox/vector-tile-js 1.3.1</a></li>
-		<li><a href="https://github.com/sindresorhus/pretty-ms/blob/master/license">sindresorhus/pretty-ms 5.0.0</a></li>
-		<li><a href="https://github.com/sindresorhus/pretty-bytes/blob/master/license">sindresorhus/pretty-bytes 5.2.0</a></li>
-	</ul>
+    Used libraries:
+    <ul>
+        <li><a href="https://github.com/mapbox/pbf/blob/main/LICENSE">mapbox/pbf 4.0.1</a></li>
+        <li><a href="https://github.com/mapbox/vector-tile-js/blob/main/LICENSE.txt">mapbox/vector-tile-js 2.3.0</a></li>
+        <li><a href="https://github.com/sindresorhus/pretty-ms/blob/main/license">sindresorhus/pretty-ms 7.1.0</a></li>
+        <li><a href="https://github.com/sindresorhus/pretty-bytes/blob/main/license">sindresorhus/pretty-bytes 9.3.0</a></li>
+        <li><a href="https://github.com/jaredwray/hashery/blob/main/LICENSE">jaredwray/hashery 1.5.0</a></li>
+    </ul>
 </div>
 <div class="footer">
-	Contacts:
-	<ul>
-		<li><a href="https://github.com/gorshkov-leonid/mapbox-vector-tiles-chrome-extension.git">mapbox-vector-tiles-chrome-extension</a>
-		</li>
-	</ul>
+    Source code:
+    <ul>
+        <li><a href="https://github.com/ramonbouckaert/mapbox-vector-tiles-chrome-extension.git">mapbox-vector-tiles-chrome-extension</a></li>
+        <li>Original: <a href="https://github.com/gorshkov-leonid/mapbox-vector-tiles-chrome-extension.git">mapbox-vector-tiles-chrome-extension</a></li>
+    </ul>
 </div>
-<script src="popup.js"></script>
+<script type="module" src="/src/popup.ts"></script>
 </body>
 </html>

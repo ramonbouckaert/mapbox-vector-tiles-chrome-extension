@@ -1,0 +1,56 @@
+{
+  "name": "mapbox-vector-tiles-chrome-extension",
+  "displayName": "Mapbox Vector Tiles (Forked)",
+  "version": "2.0.0",
+  "contributors": [
+    {
+      "name": "Leonid Gorshkov",
+      "email": "gorshkov.leonid@gmail.com",
+      "url": "https://github.com/gorshkov-leonid"
+    },
+    {
+      "name": "Ramon Bouckaert",
+      "email": "ramon@bouckaert.com.au",
+      "url": "https://github.com/ramonbouckaert"
+    }
+  ],
+  "description": "Parser for loaded Mapbox Vector Tiles",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "chrome-extension",
+    "developer-tools",
+    "mvt",
+    "mapbox-vector-tiles"
+  ],
+  "engines": {
+    "node": ">=25.7.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "fmt": "prettier --write '**/*.{ts,json,css,scss,md}'",
+    "zip": "npm run build && node src/zip.js"
+  },
+  "dependencies": {
+    "@mapbox/vector-tile": "^2.0.4",
+    "hashery": "^1.5.0",
+    "pbf": "^4.0.1",
+    "pretty-bytes": "^7.1.0",
+    "pretty-ms": "^9.3.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.3.0",
+    "@types/chrome": "^0.1.37",
+    "gulp": "^5.0.1",
+    "gulp-zip": "^6.1.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "volta": {
+    "node": "25.7.0",
+    "npm": "11.11.0"
+  }
+}
