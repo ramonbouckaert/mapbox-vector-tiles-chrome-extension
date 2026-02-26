@@ -6,6 +6,7 @@ import prettyBytes from 'pretty-bytes'
 import {DevToolsMessage, HTMLDivElementWithEntry, TableEntry,} from './types'
 import {Hashery} from 'hashery'
 import {isDevToolsMessage, isTableEntry} from "./utils";
+import { createJSONEditor } from 'vanilla-jsoneditor/standalone.js'
 
 const hasher = new Hashery()
 
@@ -206,7 +207,16 @@ const onDocumentClick = (e: MouseEvent) => {
       setTimeout(async () => {
         const geoJsonOrJsonError = await prepareGeoJsonTile(entry)
         if (dialog) dialog.style.display = 'block'
-        viewTileContainer.innerHTML = createViewContent(entry, geoJsonOrJsonError)
+        // viewTileContainer.innerHTML = createViewContent(entry, geoJsonOrJsonError)
+        createJSONEditor({
+          target: viewTileContainer,
+          props: {
+            mode: "text",
+            mainMenuBar: false,
+            content: { json: createViewContent(entry, geoJsonOrJsonError) },
+            readOnly: true
+          }
+        })
       }, 0) /*to see that previous content is cleared*/
     }
   } else {
@@ -271,19 +281,13 @@ const prepareGeoJsonTile = async (
 const createViewContent = (
   entry: TableEntry,
   geoJsonOrJsonError: Record<string, GeoJSON> | { error: string },
-): string => {
-  return JSON.stringify(
-    entry,
-    (key, value) => {
-      if (key === 'extra') {
-        return undefined
-      } else if (key === 'tile') {
-        return geoJsonOrJsonError
-      }
-      return value
-    },
-    2,
-  )
+): object => {
+
+  return {
+    ...entry,
+    extra: undefined,
+    tile: geoJsonOrJsonError
+  }
 }
 
 const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
