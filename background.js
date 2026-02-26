@@ -1,20 +1,20 @@
-chrome.runtime.onInstalled.addListener(function () {
+chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.local.set({
-            mvtRequestPattern: ".*\\/(?<z>\\d+)\\/(?<x>\\d+)\\/(?<y>\\d+)\\.mvt[^\\/]*$",
-            trackEmptyResponse: true,
-            trackOnlySuccessfulResponse: false
-        },
-        function () {
-        }
-    );
+        mvtRequestPattern: ".*\\/(?<z>\\d+)\\/(?<x>\\d+)\\/(?<y>\\d+)\\.mvt[^\\/]*$",
+        trackEmptyResponse: true,
+        trackOnlySuccessfulResponse: false
+    });
 
-    chrome.declarativeContent.onPageChanged.removeRules(undefined, function () {
-        chrome.declarativeContent.onPageChanged.addRules([{
-            conditions: [new chrome.declarativeContent.PageStateMatcher({
-                pageUrl: {},
-            })
-            ],
-            actions: [new chrome.declarativeContent.ShowPageAction()]
-        }]);
+    chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+        chrome.declarativeContent.onPageChanged.addRules([
+            {
+                conditions: [
+                    new chrome.declarativeContent.PageStateMatcher({
+                        pageUrl: {}  // Matches all pages
+                    })
+                ],
+                actions: [new chrome.declarativeContent.ShowAction()]
+            }
+        ]);
     });
 });
