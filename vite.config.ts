@@ -2,13 +2,14 @@ import { defineConfig } from 'vite'
 import { crx } from '@crxjs/vite-plugin'
 import manifest from './src/manifest'
 import { resolve } from 'node:path'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-// https://vitejs.dev/config/
 export default defineConfig(() => {
   return {
     build: {
       emptyOutDir: true,
       outDir: 'build',
+      license: true,
       rollupOptions: {
         input: {
           'mvt-tiles-panel': resolve(__dirname, 'mvt-tiles-panel.html'),
@@ -19,7 +20,14 @@ export default defineConfig(() => {
       },
     },
 
-    plugins: [crx({ manifest })],
+    plugins: [
+      crx({ manifest }),
+      viteStaticCopy({
+        targets: [
+          { src: 'LICENSE', dest: '' },
+        ],
+      })
+    ],
     legacy: {
       skipWebSocketTokenCheck: true,
     },
