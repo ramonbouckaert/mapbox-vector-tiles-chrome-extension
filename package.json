@@ -1,7 +1,7 @@
 {
   "name": "mapbox-vector-tiles-chrome-extension",
   "displayName": "Mapbox Vector Tiles (Forked)",
-  "version": "2.1.0b",
+  "version": "2.1.0",
   "contributors": [
     {
       "name": "Leonid Gorshkov",
