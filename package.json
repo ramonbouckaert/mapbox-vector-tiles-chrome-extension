@@ -37,7 +37,6 @@
   "dependencies": {
     "@mapbox/vector-tile": "^2.0.4",
     "hashery": "^1.5.0",
-    "patch-package": "^8.0.1",
     "pbf": "^4.0.1",
     "pretty-bytes": "^7.1.0",
     "pretty-ms": "^9.3.0",
@@ -48,6 +47,7 @@
     "@types/chrome": "^0.1.37",
     "gulp": "^5.0.1",
     "gulp-zip": "^6.1.0",
+    "patch-package": "^8.0.1",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
