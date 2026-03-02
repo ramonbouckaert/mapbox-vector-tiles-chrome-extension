@@ -9,7 +9,7 @@ export default defineManifest({
   description: packageData.description,
   version: packageData.version,
   manifest_version: 3,
-  permissions: ['storage', 'activeTab'],
+  permissions: ['storage'],
   icons: {
     16: 'images/logo16.png',
     32: 'images/logo32.png',

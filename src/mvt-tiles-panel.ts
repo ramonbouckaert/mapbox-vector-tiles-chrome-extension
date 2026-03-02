@@ -207,7 +207,6 @@ const onDocumentClick = (e: MouseEvent) => {
       setTimeout(async () => {
         const geoJsonOrJsonError = await prepareGeoJsonTile(entry)
         if (dialog) dialog.style.display = 'block'
-        // viewTileContainer.innerHTML = createViewContent(entry, geoJsonOrJsonError)
         createJSONEditor({
           target: viewTileContainer,
           props: {
