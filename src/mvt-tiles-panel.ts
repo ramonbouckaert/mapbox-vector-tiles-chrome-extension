@@ -180,7 +180,7 @@ mvtRequestPatternText.addEventListener('keyup', () => {
   updateSettings()
 })
 
-const onDocumentClick = (e: MouseEvent) => {
+const onDocumentClick = async (e: MouseEvent) => {
   const dialogIsHidden = dialog
     ? window.getComputedStyle(dialog).getPropertyValue('display') === 'none'
     : true
@@ -195,13 +195,21 @@ const onDocumentClick = (e: MouseEvent) => {
     ) {
       node = node.parentElement
     }
-    viewTileContainer.innerHTML = ''
     if (dialog) dialog.style.display = 'none'
     const entry = (node && node instanceof Element && 'entry' in node && node.entry) || undefined
     if (isTableEntry(entry)) {
-      setTimeout(async () => {
-        const geoJsonOrJsonError = await prepareGeoJsonTile(entry)
-        if (dialog) dialog.style.display = 'block'
+      const isLarge = entry.tileSize ? entry.tileSize > 200_000 : true
+      viewTileContainer.innerHTML = isLarge ? `<div id="loadingIndicator">Loading tile as JSON${entry.tileSize ? ` (original size ${prettyBytes(entry.tileSize)})` : ""}...</div>` : ''
+      const geoJsonOrJsonError = await prepareGeoJsonTile(entry)
+      if (dialog) dialog.style.display = 'block'
+      // If the tile is large, await an animation frame to ensure the dialog has been opened with the loading indicator
+      if (isLarge) {
+        await new Promise<void>(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)))
+        // Clear the loading indicator
+        viewTileContainer.innerHTML = ''
+      }
+      // Render the JSON editor
+      setTimeout(() => {
         createJSONEditor({
           target: viewTileContainer,
           props: {
