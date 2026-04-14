@@ -11,6 +11,7 @@ export class EntriesManager {
   private startOrder = 0
   private readonly tileStore: TileStore
 
+  // Global state
   trackEmptyResponse = false
   trackOnlySuccessfulResponse = false
   mvtRequestPatternRegExp: RegExp = /[^\s\S]/

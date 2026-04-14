@@ -39,42 +39,6 @@ const trackOnlySuccessfulResponseCheckBox = document.getElementById(
 ) as HTMLInputElement
 const mvtRequestPatternText = document.getElementById('mvtRequestPattern') as HTMLInputElement
 
-// Table UI functions
-const toCell = (div: HTMLDivElement): HTMLDivElement => {
-  div.setAttribute('role', 'cell')
-  return div
-}
-
-const saveFromBinaryData = (arrayBuffer: ArrayBuffer, fileName: string) => {
-  const blob = new Blob([arrayBuffer], { type: MVT_MIME_TYPE })
-  const url = window.URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  link.click()
-  window.URL.revokeObjectURL(url)
-}
-
-const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
-  const a = document.createElement('a')
-  a.setAttribute('href', entry.url)
-  a.addEventListener('click', async (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      const blob = await entriesManager.getBlobForEntry(entry)
-      saveFromBinaryData(await blob.arrayBuffer(), `${entry.z}_${entry.x}_${entry.y}.mvt`)
-    } catch (error) {
-      const message = `Loading failed for tile ${formatTileId(entry)}`
-      console.error(message, error)
-      chrome.devtools.inspectedWindow.eval(`console.error(${JSON.stringify(message)})`)
-    }
-  })
-  const url = new URL(entry.url)
-  a.textContent = url.pathname + url.search + url.hash
-  return a
-}
-
 // DOM manipulation functions
 const processPendingEntry = async (entry: TableEntry) => {
   const rowNode = document.createElement('div') as HTMLDivElementWithEntry
@@ -167,6 +131,41 @@ const onClear = async () => {
   tilesTable.querySelectorAll('[role=row]').forEach((row) => row.remove())
 }
 
+const toCell = (div: HTMLDivElement): HTMLDivElement => {
+  div.setAttribute('role', 'cell')
+  return div
+}
+
+const saveFromBinaryData = (arrayBuffer: ArrayBuffer, fileName: string) => {
+  const blob = new Blob([arrayBuffer], { type: MVT_MIME_TYPE })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  window.URL.revokeObjectURL(url)
+}
+
+const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
+  const a = document.createElement('a')
+  a.setAttribute('href', entry.url)
+  a.addEventListener('click', async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const blob = await entriesManager.getBlobForEntry(entry)
+      saveFromBinaryData(await blob.arrayBuffer(), `${entry.z}_${entry.x}_${entry.y}.mvt`)
+    } catch (error) {
+      const message = `Loading failed for tile ${formatTileId(entry)}`
+      console.error(message, error)
+      chrome.devtools.inspectedWindow.eval(`console.error(${JSON.stringify(message)})`)
+    }
+  })
+  const url = new URL(entry.url)
+  a.textContent = url.pathname + url.search + url.hash
+  return a
+}
+
 // Misc helper functions
 //http://qaru.site/questions/88685/auto-scaling-inputtype-text-to-width-of-value
 const getTextWidth = (text: string, fontSize: string, fontName: string, fontWeight: string) => {
@@ -231,7 +230,7 @@ chrome.storage.local.get(
   },
 )
 
-// Handle changes to global state
+// Handle external changes to global state
 chrome.storage.local.onChanged.addListener((changes) => {
   if (changes['trackEmptyResponse']) {
     entriesManager.trackEmptyResponse = !!changes['trackEmptyResponse'].newValue
