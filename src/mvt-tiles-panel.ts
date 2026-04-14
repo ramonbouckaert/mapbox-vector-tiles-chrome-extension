@@ -1,27 +1,30 @@
-import Pbf from 'pbf'
-import { VectorTile } from '@mapbox/vector-tile'
-import type { Feature, GeoJSON } from 'geojson'
 import prettyMilliseconds from 'pretty-ms'
 import prettyBytes from 'pretty-bytes'
-import { HTMLDivElementWithEntry, TableEntry, TileStatistics } from './types'
-import { hashTableEntry, isTableEntry, MVT_MIME_TYPE, formatTileId, PORT_PREFIX, combineHeaders, formatTime } from './utils'
+import { HTMLDivElementWithEntry, TableEntry } from './types'
+import {
+  hashTableEntry,
+  isTableEntry,
+  MVT_MIME_TYPE,
+  formatTileId,
+  PORT_PREFIX,
+  formatTime,
+} from './utils'
 import { createJSONEditor } from 'vanilla-jsoneditor/standalone.js'
-import { TileStore } from './tile-store'
+import { EntriesManager } from './entries-manager'
 
 // Deps
 const tabId = chrome.devtools.inspectedWindow.tabId
-const tileStore = new TileStore(String(tabId))
 chrome.runtime.connect({ name: `${PORT_PREFIX}${tabId}` })
-
-// Global state
-let trackEmptyResponse: boolean
-let trackOnlySuccessfulResponse: boolean
-let mvtRequestPatternRegExp: RegExp = /[^\s\S]/
+const entriesManager = new EntriesManager(String(tabId),
+  // onAdd
+  (entry) => doAutoScrollableOperation(() => processPendingEntry(entry)),
+  // onUpdate
+  (entry) => doAutoScrollableOperation(() => processFinishedEntry(entry)),
+  // onRemove
+  (entry) => doAutoScrollableOperation(() => processRemovedEntry(entry)),
+)
 
 // Local state
-let entries: TableEntry[] = []
-let endOrder = 0
-let startOrder = 0
 let autoScroll = true
 let isAutoScrolling = false
 
@@ -35,134 +38,6 @@ const trackOnlySuccessfulResponseCheckBox = document.getElementById(
   'trackOnlySuccessfulResponse',
 ) as HTMLInputElement
 const mvtRequestPatternText = document.getElementById('mvtRequestPattern') as HTMLInputElement
-
-// Network request functions
-const onWrongContent = (
-  entry: TableEntry,
-  content: string,
-  data: Uint8Array,
-  contentLengthHeader: number,
-  err?: unknown,
-) => {
-  const message =
-    `Cannot read Pbf from Base64 string (content = ${content}, array = ${data}, size = ${data.length}` +
-    (contentLengthHeader !== -1 ? `, expectedSize = ${contentLengthHeader}` : '') +
-    `) for tile ${formatTileId(entry)}. Probably the request was aborted while reading of response body.`
-  console.warn(
-    message +
-      (err
-        ? ' Details: ' + (typeof err === 'object' && 'stack' in err ? err.stack : err.toString())
-        : ''),
-  )
-  chrome.devtools.inspectedWindow.eval(`console.warn(${JSON.stringify(message)})`)
-}
-
-const isTileEmpty = (tile: VectorTile): boolean => {
-  for (let layerName in tile.layers) {
-    const layer = tile.layers[layerName]
-    if (layer && layer.length) return false
-  }
-  return true
-}
-
-const onPendingRequest = async (entry: TableEntry) => {
-  entries.push(entry)
-  await doAutoScrollableOperation(async () => {
-    await processPendingEntry(entry)
-  })
-}
-
-const onFinishedRequest = async (
-  oldEntry: TableEntry,
-  diff: Partial<TableEntry>,
-  tile: Blob | undefined,
-) => {
-  Object.assign(oldEntry, diff)
-  if (tile !== undefined) await tileStore.set(await hashTableEntry(oldEntry), tile)
-  await doAutoScrollableOperation(async () => {
-    await processFinishedEntry(oldEntry)
-  })
-}
-
-const onRemoveEntry = async (entry: TableEntry) => {
-  const entryIndex = entries.indexOf(entry)
-  if (entryIndex !== -1) entries.splice(entryIndex, 1)
-  await doAutoScrollableOperation(async () => {
-    await processRemovedEntry(entry)
-  })
-}
-
-// Tile data functions
-const fetchTile = async (entry: TableEntry): Promise<Blob> => {
-  const headers = { ...entry.headers }
-  const acceptKey = Object.keys(headers).find((k) => k.toLowerCase() === 'accept')
-  if (acceptKey) {
-    headers[acceptKey] = '*/*'
-  } else {
-    headers['Accept'] = '*/*'
-  }
-  const res = await window.fetch(entry.url, { method: 'GET', headers })
-  const blob = new Blob([await res.arrayBuffer()], { type: MVT_MIME_TYPE })
-  await tileStore.set(await hashTableEntry(entry), blob)
-  return blob
-}
-
-const getBlobForTableEntryWithFallback = async (entry: TableEntry): Promise<Blob> => {
-  const errors: unknown[] = []
-
-  try {
-    const storedBlob = await tileStore.get(await hashTableEntry(entry))
-    if (storedBlob) return storedBlob
-    errors.push(new Error('Tile data could not be found'))
-  } catch (error) {
-    errors.push(error)
-  }
-
-  const message = `Cannot read Pbf from stored tile ${formatTileId(entry)}. MVT will be fetched again...`
-  console.warn(message, ...errors)
-  chrome.devtools.inspectedWindow.eval(`console.warn(${JSON.stringify(message)})`)
-
-  try {
-    return await fetchTile(entry)
-  } catch (error) {
-    errors.push(error)
-  }
-
-  throw Error(`Loading failed for tile ${formatTileId(entry)}`, { cause: errors })
-}
-
-const tileToGeoJson = (
-  tile: VectorTile,
-  z: number,
-  x: number,
-  y: number,
-): Record<string, GeoJSON> => {
-  const layerNames = Object.keys(tile.layers)
-  if (!layerNames.length) return {}
-  return layerNames.reduce((acc: Record<string, GeoJSON>, layerName: string) => {
-    const layer = tile.layers[layerName]
-    if (!layer) return acc
-    const features: Feature[] = []
-    for (let i = 0; i < layer.length; i++) {
-      features.push(layer.feature(i).toGeoJSON(x, y, z))
-    }
-    return { ...acc, [layerName]: { type: 'FeatureCollection' as const, features } }
-  }, {})
-}
-
-const prepareGeoJsonTile = async (
-  entry: TableEntry,
-): Promise<Record<string, GeoJSON> | { error: string }> => {
-  try {
-    const blob = await getBlobForTableEntryWithFallback(entry)
-    return tileToGeoJson(new VectorTile(new Pbf(await blob.arrayBuffer())), entry.z, entry.x, entry.y)
-  } catch (error) {
-    const message = `... Loading failed for tile ${formatTileId(entry)}`
-    console.error(message, error)
-    chrome.devtools.inspectedWindow.eval(`console.error(${JSON.stringify(message)})`)
-    return { error: message }
-  }
-}
 
 // Table UI functions
 const toCell = (div: HTMLDivElement): HTMLDivElement => {
@@ -187,7 +62,7 @@ const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
     e.preventDefault()
     e.stopPropagation()
     try {
-      const blob = await getBlobForTableEntryWithFallback(entry)
+      const blob = await entriesManager.getBlobForEntry(entry)
       saveFromBinaryData(await blob.arrayBuffer(), `${entry.z}_${entry.x}_${entry.y}.mvt`)
     } catch (error) {
       const message = `Loading failed for tile ${formatTileId(entry)}`
@@ -240,7 +115,9 @@ const processPendingEntry = async (entry: TableEntry) => {
 
 const processFinishedEntry = async (entry: TableEntry) => {
   const entryHash = await hashTableEntry(entry)
-  const rowNode = tilesTable.querySelector(`[entry-hash="${entryHash}"]`) as HTMLDivElementWithEntry | null
+  const rowNode = tilesTable.querySelector(
+    `[entry-hash="${entryHash}"]`,
+  ) as HTMLDivElementWithEntry | null
   if (!rowNode) return
 
   const statusNode = rowNode.children[0]
@@ -286,10 +163,7 @@ const doAutoScrollableOperation = async (operation: () => Promise<void>) => {
 }
 
 const onClear = async () => {
-  await tileStore.clearForTab(String(tabId))
-  entries = []
-  endOrder = 0
-  startOrder = 0
+  await entriesManager.clear()
   tilesTable.querySelectorAll('[role=row]').forEach((row) => row.remove())
 }
 
@@ -336,12 +210,12 @@ const updateSettings = () => {
 chrome.storage.local.get(
   ['trackEmptyResponse', 'trackOnlySuccessfulResponse', 'mvtRequestPattern'],
   async (r) => {
-    trackEmptyResponse = Boolean(r.trackEmptyResponse)
-    trackOnlySuccessfulResponse = Boolean(r.trackOnlySuccessfulResponse)
+    entriesManager.trackEmptyResponse = Boolean(r.trackEmptyResponse)
+    entriesManager.trackOnlySuccessfulResponse = Boolean(r.trackOnlySuccessfulResponse)
     const mvtRequestPattern = r.mvtRequestPattern?.toString()
     if (mvtRequestPattern) {
       try {
-        mvtRequestPatternRegExp = new RegExp(mvtRequestPattern, 'i')
+        entriesManager.mvtRequestPatternRegExp = new RegExp(mvtRequestPattern, 'i')
       } catch (e) {
         console.log('Mvt Request Pattern is invalid', r.mvtRequestPattern)
       }
@@ -352,139 +226,19 @@ chrome.storage.local.get(
       r.mvtRequestPattern as string,
     )
 
-    await tileStore.clearForTab(String(tabId))
-
-    chrome.devtools.network.onRequestFinished.addListener(async (httpEntry) => {
-      const urlParseResult = httpEntry.request.url.match(mvtRequestPatternRegExp)
-
-      if (!urlParseResult) return
-
-      const z = (urlParseResult.groups && urlParseResult.groups.z) || urlParseResult[1]
-      const x = (urlParseResult.groups && urlParseResult.groups.x) || urlParseResult[2]
-      const y = (urlParseResult.groups && urlParseResult.groups.y) || urlParseResult[3]
-
-      if (!z || !x || !y) return
-
-      const pendingEntry: TableEntry = {
-        x: parseInt(x),
-        y: parseInt(y),
-        z: parseInt(z),
-        status: -1,
-        url: httpEntry.request.url,
-        headers: combineHeaders(httpEntry.request.headers),
-        startOrder: ++startOrder,
-        startedDateTime: httpEntry.startedDateTime,
-        time: httpEntry.time,
-        statistics: undefined,
-        endOrder: undefined,
-        extra: { isPending: true, isValid: false, isEmpty: false },
-      }
-      await onPendingRequest(pendingEntry)
-
-      httpEntry.getContent(async (content, encoding) => {
-        const decodedBodySize = httpEntry.response.bodySize || httpEntry.response.content.size
-        if (entries.indexOf(pendingEntry) === -1) return
-
-        const isOk = httpEntry.response.status === 200
-        const isNoContent = httpEntry.response.status === 204
-        const isValid = isOk || isNoContent
-
-        const statistics: TileStatistics = { layersCount: 0, featuresCount: 0, byLayers: {} }
-        const extra = { isPending: false, isValid, isEmpty: isNoContent }
-
-        const requestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
-          await onFinishedRequest(
-            pendingEntry,
-            {
-              ...pendingEntry,
-              statistics,
-              status: httpEntry.response.status,
-              tileSize: (extra.isValid && data && data.length) || undefined,
-              endOrder: ++endOrder,
-              extra,
-            },
-            data ? new Blob([data], { type: MVT_MIME_TYPE }) : undefined,
-          )
-        }
-
-        const emptyRequestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
-          extra.isEmpty = true
-          if (!trackEmptyResponse) await onRemoveEntry(pendingEntry)
-          await requestFinished(data)
-        }
-
-        const notSuccessfulRequestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
-          extra.isValid = false
-          if (trackOnlySuccessfulResponse) {
-            await onRemoveEntry(pendingEntry)
-            return
-          }
-          await requestFinished(data)
-        }
-
-        if (!extra.isValid) {
-          await notSuccessfulRequestFinished()
-          return
-        }
-
-        if (extra.isEmpty) {
-          await emptyRequestFinished()
-          return
-        }
-
-        let data: Uint8Array<ArrayBuffer>
-        if (encoding === 'base64') {
-          data = Uint8Array.from(atob(content), (c) => c.charCodeAt(0))
-        } else {
-          data = new TextEncoder().encode(content)
-        }
-
-        if (content === undefined || (decodedBodySize !== -1 && data.length !== decodedBodySize)) {
-          onWrongContent(pendingEntry, content, data, decodedBodySize)
-          await notSuccessfulRequestFinished(data)
-          return
-        }
-
-        if (!data.length) {
-          await emptyRequestFinished(data)
-          return
-        }
-
-        let tile: VectorTile
-        try {
-          tile = new VectorTile(new Pbf(data))
-        } catch (err) {
-          onWrongContent(pendingEntry, content, data, decodedBodySize, err)
-          await notSuccessfulRequestFinished(data)
-          return
-        }
-
-        if (isTileEmpty(tile)) {
-          await emptyRequestFinished(data)
-          return
-        }
-
-        Object.keys(tile.layers).forEach((layerName) => {
-          const layer = tile.layers[layerName]
-          statistics.byLayers[layerName] = { featuresCount: layer?.length }
-          if (layer !== undefined) statistics.featuresCount += layer.length
-        })
-        statistics.layersCount = Object.keys(tile.layers).length
-
-        await requestFinished(data)
-      })
-    })
+    await entriesManager.clear()
+    chrome.devtools.network.onRequestFinished.addListener(entriesManager.handleNetworkRequest)
   },
 )
 
 // Handle changes to global state
 chrome.storage.local.onChanged.addListener((changes) => {
   if (changes['trackEmptyResponse']) {
-    trackEmptyResponse = !!changes['trackEmptyResponse'].newValue
+    entriesManager.trackEmptyResponse = !!changes['trackEmptyResponse'].newValue
     trackEmptyResponseCheckBox.checked = Boolean(changes['trackEmptyResponse'].newValue)
   }
   if (changes['trackOnlySuccessfulResponse']) {
-    trackOnlySuccessfulResponse = !!changes['trackOnlySuccessfulResponse'].newValue
+    entriesManager.trackOnlySuccessfulResponse = !!changes['trackOnlySuccessfulResponse'].newValue
     trackOnlySuccessfulResponseCheckBox.checked = Boolean(
       changes['trackOnlySuccessfulResponse'].newValue,
     )
@@ -493,7 +247,7 @@ chrome.storage.local.onChanged.addListener((changes) => {
     const mvtRequestPattern = changes['mvtRequestPattern'].newValue?.toString()
     if (mvtRequestPattern) {
       try {
-        mvtRequestPatternRegExp = new RegExp(mvtRequestPattern, 'i')
+        entriesManager.mvtRequestPatternRegExp = new RegExp(mvtRequestPattern, 'i')
       } catch (e) {
         console.log('Mvt Request Pattern is invalid', mvtRequestPattern)
       }
@@ -549,7 +303,7 @@ document.addEventListener('click', async (e: MouseEvent) => {
       viewTileContainer.innerHTML = isLarge
         ? `<div id="loadingIndicator">Loading tile as JSON${entry.tileSize ? ` (original size ${prettyBytes(entry.tileSize)})` : ''}...</div>`
         : ''
-      const geoJsonOrJsonError = await prepareGeoJsonTile(entry)
+      const geoJsonOrJsonError = await entriesManager.getGeoJsonForEntry(entry)
       if (dialog) dialog.style.display = 'block'
       // If the tile is large, await an animation frame to ensure the dialog has been opened with the loading indicator
       if (isLarge) {

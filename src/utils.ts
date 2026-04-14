@@ -1,8 +1,37 @@
 import { TableEntry } from './types'
 import { Hashery } from 'hashery'
+import {VectorTile} from "@mapbox/vector-tile";
+import type {Feature, GeoJSON} from "geojson";
 
 export const MVT_MIME_TYPE = 'application/vnd.mapbox-vector-tile'
 export const PORT_PREFIX = 'devtools-mapbox-vector-tiles-'
+
+export const isTileEmpty = (tile: VectorTile): boolean => {
+  for (const layerName in tile.layers) {
+    const layer = tile.layers[layerName]
+    if (layer && layer.length) return false
+  }
+  return true
+}
+
+export const tileToGeoJson = (
+  tile: VectorTile,
+  z: number,
+  x: number,
+  y: number,
+): Record<string, GeoJSON> => {
+  const layerNames = Object.keys(tile.layers)
+  if (!layerNames.length) return {}
+  return layerNames.reduce((acc: Record<string, GeoJSON>, layerName: string) => {
+    const layer = tile.layers[layerName]
+    if (!layer) return acc
+    const features: Feature[] = []
+    for (let i = 0; i < layer.length; i++) {
+      features.push(layer.feature(i).toGeoJSON(x, y, z))
+    }
+    return { ...acc, [layerName]: { type: 'FeatureCollection' as const, features } }
+  }, {})
+}
 
 export const formatTileId = (entry: TableEntry): string =>
   `{z: ${entry.z}, x: ${entry.x}, y: ${entry.y}}`
@@ -10,7 +39,9 @@ export const formatTileId = (entry: TableEntry): string =>
 export const isTableEntry = (a: unknown): a is TableEntry =>
   typeof a === 'object' && !!a && 'x' in a && 'y' in a && 'z' in a
 
-export const combineHeaders = (headers: { name: string; value: string }[]): Record<string, string> =>
+export const combineHeaders = (
+  headers: { name: string; value: string }[],
+): Record<string, string> =>
   headers.reduce(
     (collector, { name, value }) => {
       collector[name] = value

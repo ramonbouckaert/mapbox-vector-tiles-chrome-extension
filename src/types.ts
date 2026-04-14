@@ -21,4 +21,3 @@ export type TileStatistics = {
   featuresCount: number
   byLayers: Record<string, { featuresCount?: number }>
 }
-
