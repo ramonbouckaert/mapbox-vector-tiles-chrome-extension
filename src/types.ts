@@ -16,19 +16,9 @@ export type TableEntry = {
   tileSize?: number
 }
 
-export type TableEntryDevTools = TableEntry & { tile?: Blob | undefined }
-
 export type TileStatistics = {
   layersCount: number
   featuresCount: number
   byLayers: Record<string, { featuresCount?: number }>
 }
 
-export type DevToolsMessage =
-  | { type: 'CLEAR' }
-  | { type: 'PENDING_ENTRY'; entry: TableEntry }
-  | { type: 'FINISHED_ENTRY'; entry: TableEntry }
-  | { type: 'REMOVED_ENTRY'; entry: TableEntry }
-  | { type: 'REDRAW_ENTRIES'; entries: TableEntry[] }
-
-export type ScopedDevToolsMessage = DevToolsMessage & { tabId: number }
