@@ -4,7 +4,9 @@ Just-in-time parser for loaded Mapbox Vector Tiles (https://docs.mapbox.com/vect
 
 Forked from the original by [Leonid Gorshkov](https://github.com/gorshkov-leonid/mapbox-vector-tiles-chrome-extension), but modified to use [Typescript](https://github.com/microsoft/TypeScript), [Vite](https://github.com/vitejs/vite) build tooling, and to comply with [Chrome's Manifest V3](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3). I also added dark mode (driven by the browser setting).
 
-![Screenshot](/screenshot.png)
+![Screenshot](/screenshot1-dark.png)
+
+![Screenshot](/screenshot2-dark.png)
 
 ## Installing
 
