@@ -32,7 +32,7 @@ export class EntriesManager {
     err?: unknown,
   ): void {
     const message =
-      `Cannot read Pbf from Base64 string (content = ${content}, array = ${data}, size = ${data.length}` +
+      `Cannot read Pbf from Base64 encoded network response (content = ${content}, array = ${data}, size = ${data.length}` +
       (expectedSize !== -1 ? `, expectedSize = ${expectedSize}` : '') +
       `) for tile ${formatTileId(entry)}. Probably the request was aborted while reading of response body.`
     console.warn(
