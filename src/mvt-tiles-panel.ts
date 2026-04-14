@@ -14,8 +14,8 @@ import {
 import { createJSONEditor } from 'vanilla-jsoneditor/standalone.js'
 import { TileStore } from './tile-store'
 
-const tileStore = new TileStore()
 const tabId = chrome.devtools.inspectedWindow.tabId
+const tileStore = new TileStore(String(tabId))
 
 const tilesTable = document.getElementById('tilesTable') as HTMLDivElement
 const viewTileContainer = document.getElementById('viewTileContainer') as HTMLDivElement
