@@ -4,7 +4,7 @@ import type { Feature, GeoJSON } from 'geojson'
 import prettyMilliseconds from 'pretty-ms'
 import prettyBytes from 'pretty-bytes'
 import { HTMLDivElementWithEntry, TableEntry, TileStatistics } from './types'
-import { hashTableEntry, isTableEntry, MVT_MIME_TYPE, formatTileId, PORT_PREFIX } from './utils'
+import { hashTableEntry, isTableEntry, MVT_MIME_TYPE, formatTileId, PORT_PREFIX, combineHeaders, formatTime } from './utils'
 import { createJSONEditor } from 'vanilla-jsoneditor/standalone.js'
 import { TileStore } from './tile-store'
 
@@ -23,6 +23,7 @@ let entries: TableEntry[] = []
 let endOrder = 0
 let startOrder = 0
 let autoScroll = true
+let isAutoScrolling = false
 
 // DOM references
 const tilesTable = document.getElementById('tilesTable') as HTMLDivElement
@@ -62,16 +63,6 @@ const isTileEmpty = (tile: VectorTile): boolean => {
     if (layer && layer.length) return false
   }
   return true
-}
-
-const combineHeaders = (headers: { name: string; value: string }[]): Record<string, string> => {
-  return headers.reduce(
-    (collector, nameValue) => {
-      collector[nameValue.name] = nameValue.value
-      return collector
-    },
-    {} as Record<string, string>,
-  )
 }
 
 const onPendingRequest = async (entry: TableEntry) => {
@@ -174,13 +165,6 @@ const prepareGeoJsonTile = async (
 }
 
 // Table UI functions
-const formatTime = (dateString: string): string => {
-  if (!dateString) return ''
-  const d = new Date(dateString)
-  const pad = (n: number, len = 2) => String(n).padStart(len, '0')
-  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}.${pad(d.getUTCMilliseconds(), 3)}`
-}
-
 const toCell = (div: HTMLDivElement): HTMLDivElement => {
   div.setAttribute('role', 'cell')
   return div
@@ -295,7 +279,10 @@ const processRemovedEntry = async (entry: TableEntry) => {
 
 const doAutoScrollableOperation = async (operation: () => Promise<void>) => {
   await operation()
-  if (autoScroll) tilesTable.scrollTop = tilesTable.scrollHeight
+  if (autoScroll) {
+    isAutoScrolling = true
+    tilesTable.scrollTo({ top: tilesTable.scrollHeight, behavior: 'smooth' })
+  }
 }
 
 const onClear = async () => {
@@ -517,7 +504,11 @@ chrome.storage.local.onChanged.addListener((changes) => {
 
 // Register DOM event listeners
 tilesTable.addEventListener('scroll', () => {
-  autoScroll = tilesTable.scrollHeight - tilesTable.scrollTop - tilesTable.offsetHeight < 5
+  if (!isAutoScrolling)
+    autoScroll = tilesTable.scrollHeight - tilesTable.scrollTop - tilesTable.offsetHeight < 5
+})
+tilesTable.addEventListener('scrollend', () => {
+  isAutoScrolling = false
 })
 
 closeButton?.addEventListener('click', () => {
