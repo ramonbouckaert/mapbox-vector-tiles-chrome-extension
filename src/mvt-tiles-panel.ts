@@ -199,12 +199,14 @@ const onDocumentClick = async (e: MouseEvent) => {
     const entry = (node && node instanceof Element && 'entry' in node && node.entry) || undefined
     if (isTableEntry(entry)) {
       const isLarge = entry.tileSize ? entry.tileSize > 200_000 : true
-      viewTileContainer.innerHTML = isLarge ? `<div id="loadingIndicator">Loading tile as JSON${entry.tileSize ? ` (original size ${prettyBytes(entry.tileSize)})` : ""}...</div>` : ''
+      viewTileContainer.innerHTML = isLarge
+        ? `<div id="loadingIndicator">Loading tile as JSON${entry.tileSize ? ` (original size ${prettyBytes(entry.tileSize)})` : ''}...</div>`
+        : ''
       const geoJsonOrJsonError = await prepareGeoJsonTile(entry)
       if (dialog) dialog.style.display = 'block'
       // If the tile is large, await an animation frame to ensure the dialog has been opened with the loading indicator
       if (isLarge) {
-        await new Promise<void>(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)))
+        await new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)))
         // Clear the loading indicator
         viewTileContainer.innerHTML = ''
       }
