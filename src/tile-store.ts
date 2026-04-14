@@ -1,6 +1,6 @@
 const DB_NAME = 'devtools-mapbox-vector-tile-store'
 const STORE_NAME = 'tiles'
-const DB_VERSION = 3
+const DB_VERSION = 2
 
 export class TileStore {
   private readonly inspectedTabId: string | undefined
