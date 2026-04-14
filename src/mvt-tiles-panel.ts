@@ -27,6 +27,7 @@ const entriesManager = new EntriesManager(String(tabId),
 // Local state
 let autoScroll = true
 let isAutoScrolling = false
+let scrollRafId: number | undefined
 
 // DOM references
 const tilesTable = document.getElementById('tilesTable') as HTMLDivElement
@@ -120,9 +121,14 @@ const processRemovedEntry = async (entry: TableEntry) => {
 
 const doAutoScrollableOperation = async (operation: () => Promise<void>) => {
   await operation()
-  if (autoScroll) {
-    isAutoScrolling = true
-    tilesTable.scrollTo({ top: tilesTable.scrollHeight, behavior: 'smooth' })
+  if (autoScroll && scrollRafId === undefined) {
+    scrollRafId = requestAnimationFrame(() => {
+      scrollRafId = undefined
+      const maxScrollTop = tilesTable.scrollHeight - tilesTable.clientHeight
+      if (tilesTable.scrollTop >= maxScrollTop) return
+      isAutoScrolling = true
+      tilesTable.scrollTo({ top: tilesTable.scrollHeight, behavior: 'smooth' })
+    })
   }
 }
 
