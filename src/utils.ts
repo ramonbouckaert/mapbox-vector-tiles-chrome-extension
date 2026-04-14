@@ -1,5 +1,10 @@
-import {DevToolsMessage, TableEntry} from "./types";
-import {Hashery} from "hashery";
+import { DevToolsMessage, TableEntry } from './types'
+import { Hashery } from 'hashery'
+
+export const MVT_MIME_TYPE = 'application/vnd.mapbox-vector-tile'
+
+export const formatTileId = (entry: TableEntry): string =>
+  `{z: ${entry.z}, x: ${entry.x}, y: ${entry.y}}`
 
 export const isTableEntry = (a: unknown): a is TableEntry =>
   typeof a === 'object' && !!a && 'x' in a && 'y' in a && 'z' in a
@@ -18,4 +23,4 @@ export const hashTableEntry = async (tableEntry: TableEntry): Promise<string> =>
     startedDateTime: tableEntry.startedDateTime,
     startOrder: tableEntry.startOrder,
   })
-};
+}

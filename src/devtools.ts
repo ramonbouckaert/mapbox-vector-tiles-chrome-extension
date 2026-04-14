@@ -1,12 +1,12 @@
 import { VectorTile } from '@mapbox/vector-tile'
 import Pbf from 'pbf'
-import {DevToolsMessage, TableEntry, TableEntryDevTools, TileStatistics} from './types'
-import {hashTableEntry, isDevToolsMessage} from "./utils";
-import {TileStore} from "./tile-store";
+import { DevToolsMessage, TableEntry, TableEntryDevTools, TileStatistics } from './types'
+import { hashTableEntry, isDevToolsMessage, MVT_MIME_TYPE, formatTileId } from './utils'
+import { TileStore } from './tile-store'
 
-const tileStore = new TileStore();
+const tileStore = new TileStore()
 
-chrome.runtime.connect({ name: 'devtools-mapbox-vector-tiles' });
+chrome.runtime.connect({ name: 'devtools-mapbox-vector-tiles' })
 
 let entries: TableEntryDevTools[] = []
 let endOrder = 0
@@ -25,9 +25,13 @@ const onPendingRequest = async (entry: TableEntry) => {
   await sendMessage({ type: 'PENDING_ENTRY', entry })
 }
 
-const onFinishedRequest = async (oldEntry: TableEntry, diff: Partial<TableEntry>, tile: Blob | undefined) => {
+const onFinishedRequest = async (
+  oldEntry: TableEntry,
+  diff: Partial<TableEntry>,
+  tile: Blob | undefined,
+) => {
   Object.assign(oldEntry, diff)
-  if (tile !== undefined) await tileStore.set(await hashTableEntry(oldEntry), tile);
+  if (tile !== undefined) await tileStore.set(await hashTableEntry(oldEntry), tile)
   await sendMessage({ type: 'FINISHED_ENTRY', entry: oldEntry })
 }
 
@@ -42,11 +46,11 @@ const onRemoveEntry = async (entry: TableEntry) => {
 const handleMessage = async (message: DevToolsMessage) => {
   switch (message.type) {
     case 'CLEAR':
-      await tileStore.clear();
-      entries = [];
-      endOrder = 0;
-      startOrder = 0;
-      await redrawEntries();
+      await tileStore.clear()
+      entries = []
+      endOrder = 0
+      startOrder = 0
+      await redrawEntries()
       return
   }
 }
@@ -65,30 +69,16 @@ const onWrongContent = (
   err?: unknown,
 ) => {
   const message =
-    'Cannot read Pbf from Base64 string (' +
-    'content = ' +
-    content +
-    ', ' +
-    'array = ' +
-    data +
-    ', size = ' +
-    data.length +
-    (contentLengthHeader !== -1 ? ', expectedSize = ' + contentLengthHeader : '') +
-    ') for tile {z: ' +
-    entry.z +
-    ', x: ' +
-    entry.x +
-    ', y: ' +
-    entry.y +
-    '}. ' +
-    'Probably the request was aborted while reading of response body.'
+    `Cannot read Pbf from Base64 string (content = ${content}, array = ${data}, size = ${data.length}` +
+    (contentLengthHeader !== -1 ? `, expectedSize = ${contentLengthHeader}` : '') +
+    `) for tile ${formatTileId(entry)}. Probably the request was aborted while reading of response body.`
   console.warn(
     message +
       (err
         ? ' Details: ' + (typeof err === 'object' && 'stack' in err ? err.stack : err.toString())
         : ''),
   )
-  chrome.devtools.inspectedWindow.eval("console.warn('" + message + "')")
+  chrome.devtools.inspectedWindow.eval(`console.warn(${JSON.stringify(message)})`)
 }
 
 const isTileEmpty = (tile: VectorTile): boolean => {
@@ -102,20 +92,18 @@ const isTileEmpty = (tile: VectorTile): boolean => {
 }
 
 const combineHeaders = (headers: { name: string; value: string }[]): Record<string, string> => {
-  return headers
-    ? headers.reduce(
-        (collector, nameValue) => {
-          collector[nameValue.name] = nameValue.value
-          return collector
-        },
-        {} as Record<string, string>,
-      )
-    : {}
+  return headers.reduce(
+    (collector, nameValue) => {
+      collector[nameValue.name] = nameValue.value
+      return collector
+    },
+    {} as Record<string, string>,
+  )
 }
 
 let trackEmptyResponse: boolean
 let trackOnlySuccessfulResponse: boolean
-let mvtRequestPatternRegExp: RegExp
+let mvtRequestPatternRegExp: RegExp = /(?!)/
 
 chrome.storage.local.onChanged.addListener((changes) => {
   if (changes['trackEmptyResponse']) {
@@ -151,7 +139,7 @@ chrome.storage.local.get(
     }
 
     // Clear any leftover tile data from a previous session.
-    await tileStore.clear();
+    await tileStore.clear()
 
     chrome.devtools.panels.create('Mapbox Vector Tiles', 'images/16.png', 'mvt-tiles-panel.html')
 
@@ -227,7 +215,7 @@ chrome.storage.local.get(
               endOrder: ++endOrder,
               extra: extra,
             },
-            data ? new Blob([data], {type: "application/vnd.mapbox-vector-tile"}) : undefined
+            data ? new Blob([data], { type: MVT_MIME_TYPE }) : undefined,
           )
         }
 
@@ -265,7 +253,7 @@ chrome.storage.local.get(
           data = new TextEncoder().encode(content)
         }
 
-        if (content == undefined || (decodedBodySize !== -1 && data.length !== decodedBodySize)) {
+        if (content === undefined || (decodedBodySize !== -1 && data.length !== decodedBodySize)) {
           onWrongContent(pendingEntry, content, data, decodedBodySize)
           await notSuccessfulRequestFinished(data)
           return

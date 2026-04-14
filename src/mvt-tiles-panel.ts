@@ -1,14 +1,20 @@
 import Pbf from 'pbf'
-import {VectorTile} from '@mapbox/vector-tile'
-import type {Feature, GeoJSON} from 'geojson'
+import { VectorTile } from '@mapbox/vector-tile'
+import type { Feature, GeoJSON } from 'geojson'
 import prettyMilliseconds from 'pretty-ms'
 import prettyBytes from 'pretty-bytes'
-import {DevToolsMessage, HTMLDivElementWithEntry, TableEntry,} from './types'
-import {hashTableEntry, isDevToolsMessage, isTableEntry} from "./utils";
+import { DevToolsMessage, HTMLDivElementWithEntry, TableEntry } from './types'
+import {
+  hashTableEntry,
+  isDevToolsMessage,
+  isTableEntry,
+  MVT_MIME_TYPE,
+  formatTileId,
+} from './utils'
 import { createJSONEditor } from 'vanilla-jsoneditor/standalone.js'
-import {TileStore} from "./tile-store";
+import { TileStore } from './tile-store'
 
-const tileStore = new TileStore();
+const tileStore = new TileStore()
 
 const tilesTable = document.getElementById('tilesTable') as HTMLDivElement
 const viewTileContainer = document.getElementById('viewTileContainer') as HTMLDivElement
@@ -47,12 +53,12 @@ const handleMessage = async (message: DevToolsMessage): Promise<void> => {
     case 'REDRAW_ENTRIES':
       await doAutoScrollableOperation(async () => {
         tilesTable.querySelectorAll('[role=row]').forEach((row) => row.remove())
-        message.entries.forEach((entry) => {
-          processPendingEntry(entry)
+        for (const entry of message.entries) {
+          await processPendingEntry(entry)
           if (entry.status !== -1 /*pending*/) {
-            processFinishedEntry(entry)
+            await processFinishedEntry(entry)
           }
-        })
+        }
       })
       return
   }
@@ -199,11 +205,12 @@ const onDocumentClick = (e: MouseEvent) => {
         createJSONEditor({
           target: viewTileContainer,
           props: {
-            mode: "text",
+            mode: 'text',
             mainMenuBar: false,
             content: { json: createViewContent(entry, geoJsonOrJsonError) },
-            readOnly: true
-          }
+            readOnly: true,
+            maxDocumentSizeTextMode: Infinity,
+          },
         })
       }, 0) /*to see that previous content is cleared*/
     }
@@ -217,61 +224,54 @@ const onDocumentClick = (e: MouseEvent) => {
 
 document.addEventListener('click', onDocumentClick)
 
-const getBlobForTableEntry = async (
-  entry: TableEntry
-): Promise<Blob> => {
-  const storedBlob = await tileStore.get(await hashTableEntry(entry));
+const getBlobForTableEntry = async (entry: TableEntry): Promise<Blob> => {
+  const storedBlob = await tileStore.get(await hashTableEntry(entry))
 
-  if (!storedBlob) throw Error("Tile data could not be found");
+  if (!storedBlob) throw Error('Tile data could not be found')
 
-  return storedBlob;
+  return storedBlob
 }
 
-const getBlobForTableEntryWithFallback = async (
-  entry: TableEntry
-): Promise<Blob> => {
-  let blob: Blob | undefined;
-  const errors: unknown[] = [];
+const getBlobForTableEntryWithFallback = async (entry: TableEntry): Promise<Blob> => {
+  let blob: Blob | undefined
+  const errors: unknown[] = []
 
   try {
-    blob = await getBlobForTableEntry(entry);
+    blob = await getBlobForTableEntry(entry)
   } catch (error) {
-    errors.push(error);
-    const message =
-      'Cannot read Pbf from stored tile' +
-      '{z: ' + entry.z + ', x: ' + entry.x + ', y: ' + entry.y + '}' +
-      '. ' +
-      'MVT will be fetched again... '
+    errors.push(error)
+    const message = `Cannot read Pbf from stored tile ${formatTileId(entry)}. MVT will be fetched again...`
     console.warn(message, error)
-    chrome.devtools.inspectedWindow.eval("console.warn('" + message + "')")
+    chrome.devtools.inspectedWindow.eval(`console.warn(${JSON.stringify(message)})`)
 
     //retry...
     try {
       blob = await fetchTile(entry)
     } catch (error) {
-      errors.push(error);
+      errors.push(error)
     }
   }
 
   if (!blob) {
-    throw Error('Loading failed for tile {z: ' + entry.z + ', x: ' + entry.x + ', y: ' + entry.y + '}', { cause: errors });
+    throw Error(`Loading failed for tile ${formatTileId(entry)}`, { cause: errors })
   }
 
-  return blob;
-};
+  return blob
+}
 
-const getVectorTileForBlob = async (blob: Blob): Promise<VectorTile> => new VectorTile(new Pbf(await blob.arrayBuffer()));
+const getVectorTileForBlob = async (blob: Blob): Promise<VectorTile> =>
+  new VectorTile(new Pbf(await blob.arrayBuffer()))
 
 const prepareGeoJsonTile = async (
-  entry: TableEntry
+  entry: TableEntry,
 ): Promise<Record<string, GeoJSON> | { error: string }> => {
   try {
-    const vectorTile = await getVectorTileForBlob(await getBlobForTableEntryWithFallback(entry));
+    const vectorTile = await getVectorTileForBlob(await getBlobForTableEntryWithFallback(entry))
     return tileToGeoJson(vectorTile, entry.z, entry.x, entry.y)
   } catch (error) {
-    const message = '... Loading failed for tile {z: ' + entry.z + ', x: ' + entry.x + ', y: ' + entry.y + '}'
-    console.error(message, error);
-    chrome.devtools.inspectedWindow.eval("console.error('" + message + "')")
+    const message = `... Loading failed for tile ${formatTileId(entry)}`
+    console.error(message, error)
+    chrome.devtools.inspectedWindow.eval(`console.error(${JSON.stringify(message)})`)
     return { error: message }
   }
 }
@@ -280,11 +280,10 @@ const createViewContent = (
   entry: TableEntry,
   geoJsonOrJsonError: Record<string, GeoJSON> | { error: string },
 ): object => {
-
   return {
     ...entry,
     extra: undefined,
-    tile: geoJsonOrJsonError
+    tile: geoJsonOrJsonError,
   }
 }
 
@@ -299,20 +298,12 @@ const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
     const fileName = entry.z + '_' + entry.x + '_' + entry.y + '.mvt'
 
     try {
-      const blob = await getBlobForTableEntryWithFallback(entry);
-      saveFromBinaryData(await blob.arrayBuffer(), fileName);
+      const blob = await getBlobForTableEntryWithFallback(entry)
+      saveFromBinaryData(await blob.arrayBuffer(), fileName)
     } catch (error) {
-      const message =
-        'Loading failed for tile ' +
-        '{z: ' +
-        entry.z +
-        ', x: ' +
-        entry.x +
-        ', y: ' +
-        entry.y +
-        '}'
+      const message = `Loading failed for tile ${formatTileId(entry)}`
       console.error(message, error)
-      chrome.devtools.inspectedWindow.eval("console.error('" + message + "')")
+      chrome.devtools.inspectedWindow.eval(`console.error(${JSON.stringify(message)})`)
     }
     return false
   })
@@ -323,22 +314,20 @@ const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
 
 const fetchTile = async (entry: TableEntry): Promise<Blob> => {
   const headers = { ...entry.headers }
-  if (headers.accept) {
-    headers.accept = '*/*'
+  const acceptKey = Object.keys(headers).find((k) => k.toLowerCase() === 'accept')
+  if (acceptKey) {
+    headers[acceptKey] = '*/*'
   } else {
-    headers.Accept = '*/*'
+    headers['Accept'] = '*/*'
   }
   const res = await window.fetch(entry.url, { method: 'GET', headers: headers })
-  const blob = new Blob([await res.arrayBuffer()], { type: "application/vnd.mapbox-vector-tile" })
-  await tileStore.set(await hashTableEntry(entry), blob);
+  const blob = new Blob([await res.arrayBuffer()], { type: MVT_MIME_TYPE })
+  await tileStore.set(await hashTableEntry(entry), blob)
   return blob
 }
 
-const saveFromBinaryData = (
-  arrayBuffer: ArrayBuffer,
-  fileName: string,
-) => {
-  const newBlob = new Blob([arrayBuffer], { type: "application/vnd.mapbox-vector-tile" })
+const saveFromBinaryData = (arrayBuffer: ArrayBuffer, fileName: string) => {
+  const newBlob = new Blob([arrayBuffer], { type: MVT_MIME_TYPE })
   const data = window.URL.createObjectURL(newBlob)
   const link = document.createElement('a')
   link.href = data
@@ -347,7 +336,10 @@ const saveFromBinaryData = (
   window.URL.revokeObjectURL(data)
 }
 
-const toRow = async (div: HTMLDivElementWithEntry, entry: TableEntry): Promise<HTMLDivElementWithEntry> => {
+const toRow = async (
+  div: HTMLDivElementWithEntry,
+  entry: TableEntry,
+): Promise<HTMLDivElementWithEntry> => {
   div.setAttribute('entry-hash', await hashTableEntry(entry))
   div.entry = entry
   div.setAttribute('role', 'row')
@@ -472,12 +464,14 @@ const processFinishedEntry = async (entry: TableEntry) => {
         rowNode.classList.add('empty-tile')
       }
 
-      if (layersCountNode) layersCountNode.textContent = statistics.layersCount ? String(statistics.layersCount) : ''
+      if (layersCountNode)
+        layersCountNode.textContent = statistics.layersCount ? String(statistics.layersCount) : ''
 
       const layersStatistics = statistics.byLayers
-      if (featuresCountNode) featuresCountNode.textContent = Object.keys(layersStatistics)
-        .map((layerName) => layerName + ': ' + layersStatistics[layerName]?.featuresCount)
-        .join('\n')
+      if (featuresCountNode)
+        featuresCountNode.textContent = Object.keys(layersStatistics)
+          .map((layerName) => layerName + ': ' + layersStatistics[layerName]?.featuresCount)
+          .join('\n')
     }
   } else {
     rowNode.classList.add('no-success-tile')

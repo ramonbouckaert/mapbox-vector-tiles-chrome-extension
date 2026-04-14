@@ -23,10 +23,8 @@ export default defineConfig(() => {
     plugins: [
       crx({ manifest }),
       viteStaticCopy({
-        targets: [
-          { src: 'LICENSE', dest: '' },
-        ],
-      })
+        targets: [{ src: 'LICENSE', dest: '' }],
+      }),
     ],
     legacy: {
       skipWebSocketTokenCheck: true,
