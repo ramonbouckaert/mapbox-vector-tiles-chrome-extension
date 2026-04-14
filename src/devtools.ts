@@ -1,9 +1,14 @@
 import { VectorTile } from '@mapbox/vector-tile'
 import Pbf from 'pbf'
-import { DevToolsMessage, TableEntry, TileStatistics } from './types'
-import {isDevToolsMessage} from "./utils";
+import {DevToolsMessage, TableEntry, TableEntryDevTools, TileStatistics} from './types'
+import {hashTableEntry, isDevToolsMessage} from "./utils";
+import {TileStore} from "./tile-store";
 
-let entries: TableEntry[] = []
+const tileStore = new TileStore();
+
+chrome.runtime.connect({ name: 'devtools-mapbox-vector-tiles' });
+
+let entries: TableEntryDevTools[] = []
 let endOrder = 0
 let startOrder = 0
 
@@ -20,8 +25,9 @@ const onPendingRequest = async (entry: TableEntry) => {
   await sendMessage({ type: 'PENDING_ENTRY', entry })
 }
 
-const onFinishedRequest = async (oldEntry: TableEntry, diff: Partial<TableEntry>) => {
+const onFinishedRequest = async (oldEntry: TableEntry, diff: Partial<TableEntry>, tile: Blob | undefined) => {
   Object.assign(oldEntry, diff)
+  if (tile !== undefined) await tileStore.set(await hashTableEntry(oldEntry), tile);
   await sendMessage({ type: 'FINISHED_ENTRY', entry: oldEntry })
 }
 
@@ -36,10 +42,11 @@ const onRemoveEntry = async (entry: TableEntry) => {
 const handleMessage = async (message: DevToolsMessage) => {
   switch (message.type) {
     case 'CLEAR':
-      entries = []
-      endOrder = 0
-      startOrder = 0
-      await redrawEntries()
+      await tileStore.clear();
+      entries = [];
+      endOrder = 0;
+      startOrder = 0;
+      await redrawEntries();
       return
   }
 }
@@ -87,7 +94,7 @@ const onWrongContent = (
 const isTileEmpty = (tile: VectorTile): boolean => {
   for (let layerName in tile.layers) {
     const layer = tile.layers[layerName]
-    if (layer.length) {
+    if (layer && layer.length) {
       return false
     }
   }
@@ -131,7 +138,7 @@ chrome.storage.local.onChanged.addListener((changes) => {
 
 chrome.storage.local.get(
   ['trackEmptyResponse', 'trackOnlySuccessfulResponse', 'mvtRequestPattern'],
-  (r) => {
+  async (r) => {
     trackEmptyResponse = Boolean(r.trackEmptyResponse)
     trackOnlySuccessfulResponse = Boolean(r.trackOnlySuccessfulResponse)
     const mvtRequestPattern = r.mvtRequestPattern?.toString()
@@ -142,6 +149,9 @@ chrome.storage.local.get(
         console.log('Mvt Request Pattern is invalid', r.mvtRequestPattern)
       }
     }
+
+    // Clear any leftover tile data from a previous session.
+    await tileStore.clear();
 
     chrome.devtools.panels.create('Mapbox Vector Tiles', 'images/16.png', 'mvt-tiles-panel.html')
 
@@ -207,15 +217,18 @@ chrome.storage.local.get(
         const extra = { isPending: false, isValid: isValid, isEmpty: isNoContent }
 
         const requestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
-          await onFinishedRequest(pendingEntry, {
-            ...pendingEntry,
-            statistics: statistics,
-            status: httpEntry.response.status,
-            tile: data ? new Blob([data], { type: "application/vnd.mapbox-vector-tile" }) : undefined,
-            tileSize: (extra.isValid && data && data.length) || undefined,
-            endOrder: ++endOrder,
-            extra: extra,
-          })
+          await onFinishedRequest(
+            pendingEntry,
+            {
+              ...pendingEntry,
+              statistics: statistics,
+              status: httpEntry.response.status,
+              tileSize: (extra.isValid && data && data.length) || undefined,
+              endOrder: ++endOrder,
+              extra: extra,
+            },
+            data ? new Blob([data], {type: "application/vnd.mapbox-vector-tile"}) : undefined
+          )
         }
 
         const emptyRequestFinished = async (data?: Uint8Array<ArrayBuffer>) => {
@@ -282,8 +295,8 @@ chrome.storage.local.get(
         layersNames.forEach((layerName) => {
           const layer = tile.layers[layerName]
           const layerStatistics: { featuresCount?: number } = (statistics.byLayers[layerName] = {})
-          layerStatistics.featuresCount = layer.length
-          statistics.featuresCount += layer.length
+          if (layer !== undefined) layerStatistics.featuresCount = layer.length
+          if (layer !== undefined) statistics.featuresCount += layer.length
         })
         statistics.layersCount = layersNames.length
 

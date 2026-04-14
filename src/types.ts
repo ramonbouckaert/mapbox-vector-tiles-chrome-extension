@@ -11,11 +11,12 @@ export type TableEntry = {
   startedDateTime: string
   time: number
   statistics?: TileStatistics
-  tile?: Blob
   endOrder: unknown
   extra: { isPending: boolean; isValid: boolean; isEmpty: boolean }
   tileSize?: number
 }
+
+export type TableEntryDevTools = TableEntry & { tile?: Blob | undefined };
 
 export type TileStatistics = {
   layersCount: number
