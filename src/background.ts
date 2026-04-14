@@ -1,13 +1,22 @@
 import { TileStore } from './tile-store'
+import { PORT_PREFIX } from './utils'
+const activePorts = new Set<chrome.runtime.Port>()
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== 'devtools-mapbox-vector-tiles') return
-  // Clear the tile store when the dev tool panel is closed
+  if (!port.name.startsWith(PORT_PREFIX)) return
+  const tabId = port.name.slice(PORT_PREFIX.length)
+  activePorts.add(port)
   port.onDisconnect.addListener(async () => {
-    await navigator.locks.request(
-      'mapbox-vector-tiles-clear',
-      async () => await new TileStore().clear(),
-    )
+    activePorts.delete(port)
+    await navigator.locks.request(`mapbox-vector-tiles-clear-${tabId}`, async () => {
+      await new TileStore().clearForTab(tabId)
+    })
+    if (activePorts.size === 0) {
+      // All DevTools windows closed - clear the entire store as a safety net.
+      await navigator.locks.request('mapbox-vector-tiles-clear', async () => {
+        await new TileStore().clear()
+      })
+    }
   })
 })
 

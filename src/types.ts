@@ -30,3 +30,5 @@ export type DevToolsMessage =
   | { type: 'FINISHED_ENTRY'; entry: TableEntry }
   | { type: 'REMOVED_ENTRY'; entry: TableEntry }
   | { type: 'REDRAW_ENTRIES'; entries: TableEntry[] }
+
+export type ScopedDevToolsMessage = DevToolsMessage & { tabId: number }

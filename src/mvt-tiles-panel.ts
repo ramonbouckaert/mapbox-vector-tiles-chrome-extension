@@ -6,7 +6,7 @@ import prettyBytes from 'pretty-bytes'
 import { DevToolsMessage, HTMLDivElementWithEntry, TableEntry } from './types'
 import {
   hashTableEntry,
-  isDevToolsMessage,
+  isScopedDevToolsMessage,
   isTableEntry,
   MVT_MIME_TYPE,
   formatTileId,
@@ -15,6 +15,7 @@ import { createJSONEditor } from 'vanilla-jsoneditor/standalone.js'
 import { TileStore } from './tile-store'
 
 const tileStore = new TileStore()
+const tabId = chrome.devtools.inspectedWindow.tabId
 
 const tilesTable = document.getElementById('tilesTable') as HTMLDivElement
 const viewTileContainer = document.getElementById('viewTileContainer') as HTMLDivElement
@@ -26,7 +27,7 @@ closeButton?.addEventListener('click', () => {
 })
 
 const sendMessage = async (message: DevToolsMessage) => {
-  await chrome.runtime.sendMessage(message)
+  await chrome.runtime.sendMessage({ ...message, tabId })
 }
 
 const onClear = async () => {
@@ -65,7 +66,7 @@ const handleMessage = async (message: DevToolsMessage): Promise<void> => {
 }
 
 chrome.runtime.onMessage.addListener(async (message: unknown) => {
-  if (isDevToolsMessage(message)) {
+  if (isScopedDevToolsMessage(message, tabId)) {
     await handleMessage(message)
   }
 })

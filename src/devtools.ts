@@ -1,19 +1,20 @@
 import { VectorTile } from '@mapbox/vector-tile'
 import Pbf from 'pbf'
 import { DevToolsMessage, TableEntry, TableEntryDevTools, TileStatistics } from './types'
-import { hashTableEntry, isDevToolsMessage, MVT_MIME_TYPE, formatTileId } from './utils'
+import { hashTableEntry, isScopedDevToolsMessage, MVT_MIME_TYPE, formatTileId, PORT_PREFIX } from './utils'
 import { TileStore } from './tile-store'
 
-const tileStore = new TileStore()
+const tabId = chrome.devtools.inspectedWindow.tabId
+const tileStore = new TileStore(String(tabId))
 
-chrome.runtime.connect({ name: 'devtools-mapbox-vector-tiles' })
+chrome.runtime.connect({ name: `${PORT_PREFIX}${tabId}` })
 
 let entries: TableEntryDevTools[] = []
 let endOrder = 0
 let startOrder = 0
 
 const sendMessage = async (message: DevToolsMessage) => {
-  await chrome.runtime.sendMessage(message)
+  await chrome.runtime.sendMessage({ ...message, tabId })
 }
 
 const redrawEntries = async () => {
@@ -46,7 +47,7 @@ const onRemoveEntry = async (entry: TableEntry) => {
 const handleMessage = async (message: DevToolsMessage) => {
   switch (message.type) {
     case 'CLEAR':
-      await tileStore.clear()
+      await tileStore.clearForTab(String(tabId))
       entries = []
       endOrder = 0
       startOrder = 0
@@ -56,7 +57,7 @@ const handleMessage = async (message: DevToolsMessage) => {
 }
 
 chrome.runtime.onMessage.addListener(async (message: unknown) => {
-  if (isDevToolsMessage(message)) {
+  if (isScopedDevToolsMessage(message, tabId)) {
     await handleMessage(message)
   }
 })
@@ -139,7 +140,7 @@ chrome.storage.local.get(
     }
 
     // Clear any leftover tile data from a previous session.
-    await tileStore.clear()
+    await tileStore.clearForTab(String(tabId))
 
     chrome.devtools.panels.create('Mapbox Vector Tiles', 'images/16.png', 'mvt-tiles-panel.html')
 
