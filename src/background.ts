@@ -4,6 +4,8 @@ import { PORT_PREFIX } from './utils'
 const tileStore = new TileStore()
 const activePorts = new Set<chrome.runtime.Port>()
 
+await tileStore.clear()
+
 chrome.runtime.onConnect.addListener((port) => {
   if (!port.name.startsWith(PORT_PREFIX)) return
   const tabId = port.name.slice(PORT_PREFIX.length)
