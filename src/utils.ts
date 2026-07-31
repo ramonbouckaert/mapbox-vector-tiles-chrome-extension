@@ -13,6 +13,25 @@ export const MAX_TABLE_ENTRIES = 1000
 // box is left empty.
 export const NEVER_MATCHES = /[^\s\S]/
 
+export type MatchMode = 'automatic' | 'contentType' | 'urlPattern'
+
+export const MATCH_MODES: readonly MatchMode[] = ['automatic', 'contentType', 'urlPattern']
+
+export const isMatchMode = (value: unknown): value is MatchMode =>
+  MATCH_MODES.includes(value as MatchMode)
+
+export type TileCoords = { z: number; x: number; y: number }
+
+// Coordinates for a tile whose URL carries no recognisable z/x/y.
+const unknownCoords = (): TileCoords => ({ z: NaN, x: NaN, y: NaN })
+
+// Strips any parameters (";charset=...") and normalises for comparison.
+export const normaliseContentType = (mimeType: string | undefined): string =>
+  mimeType?.split(';')[0]?.trim().toLowerCase() ?? ''
+
+export const isMvtContentType = (mimeType: string): boolean =>
+  (MVT_CONTENT_TYPES as readonly string[]).includes(mimeType)
+
 // Suggested values offered by the "Capture by" autocomplete. The first entry of
 // each list is also the default used when nothing has been configured yet.
 export const MVT_CONTENT_TYPES = [
@@ -92,6 +111,17 @@ export const tileFileName = (entry: TableEntry): string => {
   }
   const base = (lastSegment ?? '').replace(/\.[^.]*$/, '').replace(/[^\w.-]+/g, '_')
   return `${base || 'tile'}.mvt`
+}
+
+// Automatic mode. The canonical MVT content type is unambiguous, so a response
+// carrying it is captured whatever its URL looks like. The other accepted types
+// (plain protobuf, octet-stream) are also used by non-tile responses, so those
+// only count when the URL additionally looks like a tile.
+export const matchAutomatically = (mimeType: string, url: string): TileCoords | undefined => {
+  const coords = extractTileCoords(url)
+  if (mimeType === MVT_CONTENT_TYPES[0]) return coords ?? unknownCoords()
+  if (coords && isMvtContentType(mimeType)) return coords
+  return undefined
 }
 
 export const isTableEntry = (a: unknown): a is TableEntry =>

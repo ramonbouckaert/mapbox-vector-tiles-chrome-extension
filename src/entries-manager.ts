@@ -9,10 +9,13 @@ import {
   hashTableEntry,
   isTileEmpty,
   MAX_TABLE_ENTRIES,
+  matchAutomatically,
   MVT_CONTENT_TYPES,
   NEVER_MATCHES,
+  normaliseContentType,
   tileToGeoJson,
 } from './utils'
+import type { MatchMode, TileCoords } from './utils'
 import { TileStore } from './tile-store'
 
 export class EntriesManager {
@@ -24,7 +27,7 @@ export class EntriesManager {
   // Global state
   trackEmptyResponse = false
   trackOnlySuccessfulResponse = false
-  matchByContentType = true
+  matchMode: MatchMode = 'automatic'
   mvtContentType: string = MVT_CONTENT_TYPES[0]
   mvtRequestPatternRegExp: RegExp = NEVER_MATCHES
 
@@ -84,24 +87,35 @@ export class EntriesManager {
     return blob
   }
 
-  handleNetworkRequest = async (httpEntry: chrome.devtools.network.Request): Promise<void> => {
-    let coords: { z: number; x: number; y: number }
-    if (this.matchByContentType) {
-      const expected = this.mvtContentType.trim().toLowerCase()
-      const mimeType = httpEntry.response.content.mimeType?.split(';')[0]?.trim().toLowerCase()
-      if (!expected || mimeType !== expected) return
-      // The URL pattern is not in play here, so extract z/x/y on a best-effort
-      // basis; NaN coordinates are rendered as "?" in the table.
-      coords = extractTileCoords(httpEntry.request.url) ?? { z: NaN, x: NaN, y: NaN }
-    } else {
-      const urlParseResult = httpEntry.request.url.match(this.mvtRequestPatternRegExp)
-      if (!urlParseResult) return
+  // Returns the tile's coordinates when the request should be captured, and
+  // undefined when it should be ignored. Coordinates can be NaN for a captured
+  // tile whose URL carries no z/x/y; those render as "?" in the table.
+  private matchRequest(httpEntry: chrome.devtools.network.Request): TileCoords | undefined {
+    const url = httpEntry.request.url
+
+    if (this.matchMode === 'urlPattern') {
+      const urlParseResult = url.match(this.mvtRequestPatternRegExp)
+      if (!urlParseResult) return undefined
       const z = urlParseResult.groups?.z ?? urlParseResult[1]
       const x = urlParseResult.groups?.x ?? urlParseResult[2]
       const y = urlParseResult.groups?.y ?? urlParseResult[3]
-      if (!z || !x || !y) return
-      coords = { z: parseInt(z), x: parseInt(x), y: parseInt(y) }
+      if (!z || !x || !y) return undefined
+      return { z: parseInt(z), x: parseInt(x), y: parseInt(y) }
     }
+
+    const mimeType = normaliseContentType(httpEntry.response.content.mimeType)
+
+    if (this.matchMode === 'automatic') return matchAutomatically(mimeType, url)
+
+    const expected = normaliseContentType(this.mvtContentType)
+    if (!expected || mimeType !== expected) return undefined
+    // No pattern is in play here, so extract z/x/y on a best-effort basis.
+    return extractTileCoords(url) ?? { z: NaN, x: NaN, y: NaN }
+  }
+
+  handleNetworkRequest = async (httpEntry: chrome.devtools.network.Request): Promise<void> => {
+    const coords = this.matchRequest(httpEntry)
+    if (!coords) return
 
     const pendingEntry: TableEntry = {
       x: coords.x,

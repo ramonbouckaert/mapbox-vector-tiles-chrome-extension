@@ -25,10 +25,16 @@ raw `.mvt`.
 ### Settings
 
 - **Capture by** — how requests are recognised as vector tiles.
-  - **Content Type** (default) matches the response's content type, so it works whatever
-    the URL looks like. The box holds the type to match; a few common ones are suggested,
-    and any value can be typed. Tile coordinates are then read from the URL on a
-    best-effort basis, and shown as `?` when it has no recognisable `z/x/y`.
+  - **Automatic** (default) needs no configuration. It captures every response sent as
+    `application/vnd.mapbox-vector-tile`, whatever its URL looks like, since that type is
+    unambiguous. It also captures the looser types (`application/x-protobuf`,
+    `application/octet-stream` and friends), but only when the URL additionally contains
+    a `z/x/y` triple — those types are shared with plenty of non-tile responses, so the
+    URL has to corroborate them.
+  - **Content Type** matches one specific content type, so it works whatever the URL
+    looks like. The box holds the type to match; a few common ones are suggested, and any
+    value can be typed. Tile coordinates are then read from the URL on a best-effort
+    basis, and shown as `?` when it has no recognisable `z/x/y`.
   - **URL Pattern** matches a regular expression against the request URL. Named `z`, `x`
     and `y` capture groups supply the tile coordinates (falling back to the first three
     unnamed groups). Several presets are suggested.

@@ -5,7 +5,11 @@ import {
   extractTileCoords,
   formatCoord,
   formatTime,
+  isMatchMode,
+  matchAutomatically,
+  MVT_CONTENT_TYPES,
   MVT_REQUEST_PATTERNS,
+  normaliseContentType,
   tileFileName,
 } from '../src/utils.ts'
 import type { TableEntry } from '../src/types.ts'
@@ -102,6 +106,56 @@ describe('MVT_REQUEST_PATTERNS', () => {
     for (const source of MVT_REQUEST_PATTERNS) {
       assert.ok(!new RegExp(source, 'i').test('https://example.com/style/sprite.png'))
     }
+  })
+})
+
+describe('normaliseContentType', () => {
+  it('drops parameters and normalises case', () => {
+    assert.equal(
+      normaliseContentType('Application/VND.Mapbox-Vector-Tile; charset=utf-8'),
+      'application/vnd.mapbox-vector-tile',
+    )
+  })
+
+  it('returns an empty string for a missing type', () => {
+    assert.equal(normaliseContentType(undefined), '')
+  })
+})
+
+describe('matchAutomatically', () => {
+  const canonical = MVT_CONTENT_TYPES[0]
+  const tileUrl = 'https://example.com/tiles/10/512/384.pbf'
+  const plainUrl = 'https://example.com/api/data'
+
+  it('captures the canonical MVT type whatever the URL looks like', () => {
+    assert.deepEqual(matchAutomatically(canonical, tileUrl), { z: 10, x: 512, y: 384 })
+    const noCoords = matchAutomatically(canonical, plainUrl)
+    assert.ok(noCoords)
+    assert.ok(Number.isNaN(noCoords.z) && Number.isNaN(noCoords.x) && Number.isNaN(noCoords.y))
+  })
+
+  it('captures the broader types only when the URL carries z/x/y', () => {
+    for (const contentType of MVT_CONTENT_TYPES.slice(1)) {
+      assert.deepEqual(matchAutomatically(contentType, tileUrl), { z: 10, x: 512, y: 384 })
+      assert.equal(matchAutomatically(contentType, plainUrl), undefined)
+    }
+  })
+
+  it('ignores content types that are not vector tile types at all', () => {
+    assert.equal(matchAutomatically('image/png', tileUrl), undefined)
+    assert.equal(matchAutomatically('application/json', tileUrl), undefined)
+    assert.equal(matchAutomatically('', tileUrl), undefined)
+  })
+})
+
+describe('isMatchMode', () => {
+  it('accepts the three modes and rejects anything else', () => {
+    assert.ok(isMatchMode('automatic'))
+    assert.ok(isMatchMode('contentType'))
+    assert.ok(isMatchMode('urlPattern'))
+    assert.ok(!isMatchMode('nonsense'))
+    assert.ok(!isMatchMode(undefined))
+    assert.ok(!isMatchMode(true))
   })
 })
 

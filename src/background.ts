@@ -37,7 +37,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     mvtContentType: MVT_CONTENT_TYPES[0],
     trackEmptyResponse: true,
     trackOnlySuccessfulResponse: false,
-    matchByContentType: true,
+    matchMode: 'automatic',
   }
   const existing = await chrome.storage.local.get(Object.keys(defaults))
   await chrome.storage.local.set({ ...defaults, ...existing })

@@ -292,6 +292,12 @@
         vertical-align: middle;
       }
 
+      /* Automatic mode needs no value, so the box is hidden entirely. The extra
+         class beats .combo's display on specificity. */
+      .combo.combo-hidden {
+        display: none;
+      }
+
       .combo-options {
         display: none;
         position: absolute;
@@ -390,10 +396,11 @@
       <div class="setting-control">
         <label for="matchMode">Capture by</label>
         <select id="matchMode">
+          <option value="automatic">Automatic</option>
           <option value="contentType">Content Type</option>
           <option value="urlPattern">URL Pattern</option>
         </select>
-        <span class="combo">
+        <span class="combo" id="matchValueCombo">
           <input
             type="text"
             id="matchValue"

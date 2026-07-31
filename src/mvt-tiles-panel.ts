@@ -3,6 +3,7 @@ import prettyBytes from 'pretty-bytes'
 import { HTMLDivElementWithEntry, TableEntry } from './types'
 import {
   hashTableEntry,
+  isMatchMode,
   isTableEntry,
   MVT_CONTENT_TYPES,
   MVT_REQUEST_PATTERNS,
@@ -13,6 +14,7 @@ import {
   formatTime,
   tileFileName,
 } from './utils'
+import type { MatchMode } from './utils'
 import { EntriesManager } from './entries-manager'
 
 // Deps
@@ -61,6 +63,7 @@ const trackOnlySuccessfulResponseCheckBox = document.getElementById(
   'trackOnlySuccessfulResponse',
 ) as HTMLInputElement
 const matchModeSelect = document.getElementById('matchMode') as HTMLSelectElement
+const matchValueCombo = document.getElementById('matchValueCombo') as HTMLSpanElement
 const matchValueText = document.getElementById('matchValue') as HTMLInputElement
 const matchValueOptions = document.getElementById('matchValueOptions') as HTMLUListElement
 
@@ -214,7 +217,10 @@ const adjustInputTextWidth = (input: HTMLInputElement) => {
   if (textWidth) input.style.width = textWidth + 20 + 'px'
 }
 
-const isContentTypeMode = () => matchModeSelect.value === 'contentType'
+const currentMatchMode = (): MatchMode =>
+  isMatchMode(matchModeSelect.value) ? matchModeSelect.value : 'automatic'
+
+const isContentTypeMode = () => currentMatchMode() === 'contentType'
 
 // Suggestions dropdown
 let suggestions: readonly string[] = MVT_CONTENT_TYPES
@@ -277,12 +283,13 @@ const openSuggestions = (filter: string) => {
   matchValueText.setAttribute('aria-expanded', 'true')
 }
 
-const applyMatchMode = (matchByContentType: boolean) => {
-  entriesManager.matchByContentType = matchByContentType
-  matchModeSelect.value = matchByContentType ? 'contentType' : 'urlPattern'
+const applyMatchMode = (mode: MatchMode) => {
+  entriesManager.matchMode = mode
+  matchModeSelect.value = mode
   // Every mode transition funnels through here, so the suggestions are swapped
-  // in one place.
-  suggestions = matchByContentType ? MVT_CONTENT_TYPES : MVT_REQUEST_PATTERNS
+  // and the value box shown or hidden in one place.
+  suggestions = mode === 'urlPattern' ? MVT_REQUEST_PATTERNS : MVT_CONTENT_TYPES
+  matchValueCombo.classList.toggle('combo-hidden', mode === 'automatic')
   closeSuggestions()
 }
 
@@ -307,6 +314,8 @@ const applyContentType = (contentType: string) => {
 
 // The one text box edits whichever value the selected mode uses.
 const showMatchValue = () => {
+  // Automatic mode has nothing to configure and hides the box entirely.
+  if (currentMatchMode() === 'automatic') return
   const contentTypeMode = isContentTypeMode()
   const value = contentTypeMode ? mvtContentType : mvtRequestPattern
   matchValueText.title = contentTypeMode
@@ -328,11 +337,20 @@ const updateSettings = () => {
     chrome.storage.local.set({
       trackEmptyResponse: trackEmptyResponseCheckBox.checked,
       trackOnlySuccessfulResponse: trackOnlySuccessfulResponseCheckBox.checked,
-      matchByContentType: isContentTypeMode(),
+      matchMode: currentMatchMode(),
       mvtRequestPattern,
       mvtContentType,
     })
   }, 200)
+}
+
+// Reads the saved mode, migrating from the older boolean setting. A stored
+// `false` was a deliberate choice of URL patterns and is kept; `true` was only
+// ever the old default, so those profiles move on to Automatic.
+const storedMatchMode = (mode: unknown, legacyMatchByContentType: unknown): MatchMode => {
+  if (isMatchMode(mode)) return mode
+  if (legacyMatchByContentType === false) return 'urlPattern'
+  return 'automatic'
 }
 
 // Setup
@@ -340,6 +358,7 @@ chrome.storage.local.get(
   [
     'trackEmptyResponse',
     'trackOnlySuccessfulResponse',
+    'matchMode',
     'matchByContentType',
     'mvtRequestPattern',
     'mvtContentType',
@@ -349,8 +368,7 @@ chrome.storage.local.get(
     entriesManager.trackOnlySuccessfulResponse = Boolean(r.trackOnlySuccessfulResponse)
     trackEmptyResponseCheckBox.checked = Boolean(r.trackEmptyResponse)
     trackOnlySuccessfulResponseCheckBox.checked = Boolean(r.trackOnlySuccessfulResponse)
-    // Content type is the default when nothing has been stored yet.
-    applyMatchMode(r.matchByContentType === undefined ? true : Boolean(r.matchByContentType))
+    applyMatchMode(storedMatchMode(r.matchMode, r.matchByContentType))
     applyRequestPattern(r.mvtRequestPattern?.toString() || MVT_REQUEST_PATTERNS[0])
     applyContentType(r.mvtContentType?.toString() || MVT_CONTENT_TYPES[0])
     showMatchValue()
@@ -373,9 +391,9 @@ chrome.storage.local.onChanged.addListener((changes) => {
     )
   }
   const matchChanged =
-    changes['matchByContentType'] || changes['mvtRequestPattern'] || changes['mvtContentType']
-  if (changes['matchByContentType']) {
-    applyMatchMode(Boolean(changes['matchByContentType'].newValue))
+    changes['matchMode'] || changes['mvtRequestPattern'] || changes['mvtContentType']
+  if (changes['matchMode']) {
+    applyMatchMode(storedMatchMode(changes['matchMode'].newValue, undefined))
   }
   if (changes['mvtRequestPattern']) {
     applyRequestPattern(changes['mvtRequestPattern'].newValue?.toString() ?? '')
@@ -407,7 +425,7 @@ document.getElementById('clear')?.addEventListener('click', async (e) => {
 trackEmptyResponseCheckBox.addEventListener('change', updateSettings)
 trackOnlySuccessfulResponseCheckBox.addEventListener('change', updateSettings)
 matchModeSelect.addEventListener('change', () => {
-  applyMatchMode(isContentTypeMode())
+  applyMatchMode(currentMatchMode())
   showMatchValue()
   updateSettings()
 })
