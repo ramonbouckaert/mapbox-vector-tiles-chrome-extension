@@ -34,22 +34,22 @@
     "zip": "npm run build && node src/zip.js"
   },
   "dependencies": {
-    "@mapbox/vector-tile": "^2.0.4",
-    "hashery": "^2.0.0",
-    "pbf": "^4.0.1",
-    "pretty-bytes": "^7.1.0",
+    "@mapbox/vector-tile": "^3.0.0",
+    "hashery": "^3.0.1",
+    "pbf": "^5.1.2",
+    "pretty-bytes": "^7.1.1",
     "pretty-ms": "^9.3.0",
-    "vanilla-jsoneditor": "^3.12.0"
+    "vanilla-jsoneditor": "^3.13.0"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.4.0",
-    "@types/chrome": "^0.1.40",
+    "@crxjs/vite-plugin": "^2.7.1",
+    "@types/chrome": "^0.2.2",
     "gulp": "^5.0.1",
     "gulp-zip": "^6.1.0",
-    "prettier": "^3.8.3",
-    "typescript": "^6.0.2",
-    "vite": "8.0.5",
-    "vite-plugin-static-copy": "^4.0.1"
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.0",
+    "vite-plugin-static-copy": "^4.1.1"
   },
   "volta": {
     "node": "25.7.0",

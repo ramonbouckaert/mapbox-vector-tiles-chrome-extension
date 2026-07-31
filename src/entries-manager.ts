@@ -1,8 +1,8 @@
 import { VectorTile } from '@mapbox/vector-tile'
-import Pbf from 'pbf'
+import { PbfReader } from 'pbf'
 import type { GeoJSON } from 'geojson'
 import { TableEntry, TileStatistics } from './types'
-import {combineHeaders, formatTileId, hashTableEntry, isTileEmpty, MVT_MIME_TYPE, tileToGeoJson} from './utils'
+import {combineHeaders, extractTileCoords, formatTileId, hashTableEntry, isTileEmpty, MVT_CONTENT_TYPES, tileToGeoJson} from './utils'
 import { TileStore } from './tile-store'
 
 export class EntriesManager {
@@ -14,6 +14,8 @@ export class EntriesManager {
   // Global state
   trackEmptyResponse = false
   trackOnlySuccessfulResponse = false
+  matchByContentType = true
+  mvtContentType: string = MVT_CONTENT_TYPES[0]
   mvtRequestPatternRegExp: RegExp = /[^\s\S]/
 
   constructor(
@@ -27,13 +29,12 @@ export class EntriesManager {
 
   private warnContent(
     entry: TableEntry,
-    content: string,
-    data: Uint8Array,
+    data: Uint8Array | undefined,
     expectedSize: number,
     err?: unknown,
   ): void {
     const message =
-      `Cannot read Pbf from Base64 encoded network response (content = ${content}, array = ${data}, size = ${data.length}` +
+      `Cannot read Pbf from network response (decoded size = ${data ? data.length : 'unavailable'}` +
       (expectedSize !== -1 ? `, expectedSize = ${expectedSize}` : '') +
       `) for tile ${formatTileId(entry)}. Probably the request was aborted while reading of response body.`
     console.warn(
@@ -51,24 +52,34 @@ export class EntriesManager {
     if (acceptKey) headers[acceptKey] = '*/*'
     else headers['Accept'] = '*/*'
     const res = await window.fetch(entry.url, { method: 'GET', headers })
-    const blob = new Blob([await res.arrayBuffer()], { type: MVT_MIME_TYPE })
+    const blob = new Blob([await res.arrayBuffer()], { type: MVT_CONTENT_TYPES[0] })
     await this.tileStore.set(await hashTableEntry(entry), blob)
     return blob
   }
 
   handleNetworkRequest = async (httpEntry: chrome.devtools.network.Request): Promise<void> => {
-    const urlParseResult = httpEntry.request.url.match(this.mvtRequestPatternRegExp)
-    if (!urlParseResult) return
-
-    const z = urlParseResult.groups?.z ?? urlParseResult[1]
-    const x = urlParseResult.groups?.x ?? urlParseResult[2]
-    const y = urlParseResult.groups?.y ?? urlParseResult[3]
-    if (!z || !x || !y) return
+    let coords: { z: number; x: number; y: number }
+    if (this.matchByContentType) {
+      const expected = this.mvtContentType.trim().toLowerCase()
+      const mimeType = httpEntry.response.content.mimeType?.split(';')[0]?.trim().toLowerCase()
+      if (!expected || mimeType !== expected) return
+      // The URL pattern is not in play here, so extract z/x/y on a best-effort
+      // basis; NaN coordinates are rendered as "?" in the table.
+      coords = extractTileCoords(httpEntry.request.url) ?? { z: NaN, x: NaN, y: NaN }
+    } else {
+      const urlParseResult = httpEntry.request.url.match(this.mvtRequestPatternRegExp)
+      if (!urlParseResult) return
+      const z = urlParseResult.groups?.z ?? urlParseResult[1]
+      const x = urlParseResult.groups?.x ?? urlParseResult[2]
+      const y = urlParseResult.groups?.y ?? urlParseResult[3]
+      if (!z || !x || !y) return
+      coords = { z: parseInt(z), x: parseInt(x), y: parseInt(y) }
+    }
 
     const pendingEntry: TableEntry = {
-      x: parseInt(x),
-      y: parseInt(y),
-      z: parseInt(z),
+      x: coords.x,
+      y: coords.y,
+      z: coords.z,
       status: -1,
       url: httpEntry.request.url,
       headers: combineHeaders(httpEntry.request.headers),
@@ -88,7 +99,9 @@ export class EntriesManager {
 
       const isOk = httpEntry.response.status === 200
       const isNoContent = httpEntry.response.status === 204
-      const decodedBodySize = httpEntry.response.bodySize || httpEntry.response.content.size
+      // content.size is the decoded body length; bodySize is the on-the-wire
+      // (possibly compressed) size, kept only as a fallback.
+      const decodedBodySize = httpEntry.response.content.size || httpEntry.response.bodySize
 
       const statistics: TileStatistics = { layersCount: 0, featuresCount: 0, byLayers: {} }
       const extra = { isPending: false, isValid: isOk || isNoContent, isEmpty: isNoContent }
@@ -104,7 +117,7 @@ export class EntriesManager {
         if (data !== undefined) {
           await this.tileStore.set(
             await hashTableEntry(pendingEntry),
-            new Blob([data], { type: MVT_MIME_TYPE }),
+            new Blob([data], { type: MVT_CONTENT_TYPES[0] }),
           )
         }
         await this.onUpdate(pendingEntry)
@@ -140,15 +153,26 @@ export class EntriesManager {
         return
       }
 
-      let data: Uint8Array<ArrayBuffer>
-      if (encoding === 'base64') {
-        data = Uint8Array.from(atob(content), (c) => c.charCodeAt(0))
-      } else {
-        data = new TextEncoder().encode(content)
+      if (typeof content !== 'string') {
+        this.warnContent(pendingEntry, undefined, decodedBodySize)
+        await finishNotSuccessful()
+        return
       }
 
-      if (content === undefined || (decodedBodySize !== -1 && data.length !== decodedBodySize)) {
-        this.warnContent(pendingEntry, content, data, decodedBodySize)
+      let data: Uint8Array<ArrayBuffer>
+      try {
+        data =
+          encoding === 'base64'
+            ? Uint8Array.from(atob(content), (c) => c.charCodeAt(0))
+            : new TextEncoder().encode(content)
+      } catch (err) {
+        this.warnContent(pendingEntry, undefined, decodedBodySize, err)
+        await finishNotSuccessful()
+        return
+      }
+
+      if (decodedBodySize !== -1 && data.length !== decodedBodySize) {
+        this.warnContent(pendingEntry, data, decodedBodySize)
         await finishNotSuccessful(data)
         return
       }
@@ -160,9 +184,9 @@ export class EntriesManager {
 
       let tile: VectorTile
       try {
-        tile = new VectorTile(new Pbf(data))
+        tile = new VectorTile(new PbfReader(data))
       } catch (err) {
-        this.warnContent(pendingEntry, content, data, decodedBodySize, err)
+        this.warnContent(pendingEntry, data, decodedBodySize, err)
         await finishNotSuccessful(data)
         return
       }
@@ -212,11 +236,13 @@ export class EntriesManager {
   ): Promise<Record<string, GeoJSON> | { error: string }> {
     try {
       const blob = await this.getBlobForEntry(entry)
+      // Unknown coordinates (NaN) would poison every GeoJSON coordinate, so fall
+      // back to 0/0/0 - shapes are preserved, just not geo-referenced.
       return tileToGeoJson(
-        new VectorTile(new Pbf(await blob.arrayBuffer())),
-        entry.z,
-        entry.x,
-        entry.y,
+        new VectorTile(new PbfReader(await blob.arrayBuffer())),
+        Number.isFinite(entry.z) ? entry.z : 0,
+        Number.isFinite(entry.x) ? entry.x : 0,
+        Number.isFinite(entry.y) ? entry.y : 0,
       )
     } catch (error) {
       const message = `... Loading failed for tile ${formatTileId(entry)}`

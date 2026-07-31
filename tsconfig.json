@@ -19,6 +19,5 @@
     "types": ["chrome"]
   },
   "include": ["src"],
-  "exclude": ["src/manifest.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "exclude": ["src/manifest.ts"]
 }

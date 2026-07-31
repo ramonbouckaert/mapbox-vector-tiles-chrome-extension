@@ -4,17 +4,24 @@ import { HTMLDivElementWithEntry, TableEntry } from './types'
 import {
   hashTableEntry,
   isTableEntry,
-  MVT_MIME_TYPE,
+  MVT_CONTENT_TYPES,
+  MVT_REQUEST_PATTERNS,
+  formatCoord,
   formatTileId,
   PORT_PREFIX,
   formatTime,
 } from './utils'
-import { createJSONEditor } from 'vanilla-jsoneditor/standalone.js'
 import { EntriesManager } from './entries-manager'
 
 // Deps
 const tabId = chrome.devtools.inspectedWindow.tabId
-chrome.runtime.connect({ name: `${PORT_PREFIX}${tabId}` })
+const connectToServiceWorker = () => {
+  const port = chrome.runtime.connect({ name: `${PORT_PREFIX}${tabId}` })
+  // The port drops whenever the service worker is stopped for idling - reconnect
+  // so the worker keeps tracking this panel and cleans up when it really closes.
+  port.onDisconnect.addListener(() => setTimeout(connectToServiceWorker, 1000))
+}
+connectToServiceWorker()
 const entriesManager = new EntriesManager(String(tabId),
   // onAdd
   (entry) => doAutoScrollableOperation(() => processPendingEntry(entry)),
@@ -28,6 +35,10 @@ const entriesManager = new EntriesManager(String(tabId),
 let autoScroll = true
 let isAutoScrolling = false
 let scrollRafId: number | undefined
+// Both match values are kept here so that switching modes back and forth in the
+// single text box does not discard the one that is not currently shown.
+let mvtRequestPattern: string = MVT_REQUEST_PATTERNS[0]
+let mvtContentType: string = MVT_CONTENT_TYPES[0]
 
 // DOM references
 const tilesTable = document.getElementById('tilesTable') as HTMLDivElement
@@ -38,7 +49,9 @@ const trackEmptyResponseCheckBox = document.getElementById('trackEmptyResponse')
 const trackOnlySuccessfulResponseCheckBox = document.getElementById(
   'trackOnlySuccessfulResponse',
 ) as HTMLInputElement
-const mvtRequestPatternText = document.getElementById('mvtRequestPattern') as HTMLInputElement
+const matchModeSelect = document.getElementById('matchMode') as HTMLSelectElement
+const matchValueText = document.getElementById('matchValue') as HTMLInputElement
+const matchValueOptions = document.getElementById('matchValueOptions') as HTMLUListElement
 
 // DOM manipulation functions
 const processPendingEntry = async (entry: TableEntry) => {
@@ -68,9 +81,9 @@ const processPendingEntry = async (entry: TableEntry) => {
 
   statusNode.textContent = entry.status?.toString()
   urlNode.appendChild(toMvtLink(entry))
-  zNode.textContent = String(entry.z)
-  xNode.textContent = String(entry.x)
-  yNode.textContent = String(entry.y)
+  zNode.textContent = formatCoord(entry.z)
+  xNode.textContent = formatCoord(entry.x)
+  yNode.textContent = formatCoord(entry.y)
   startDateNode.textContent = `${entry.startOrder} | ${formatTime(entry.startedDateTime)}`
   durationNode.textContent = entry.time ? prettyMilliseconds(Math.round(entry.time)) : ''
   nEndedNode.textContent = String(entry.endOrder || '')
@@ -143,7 +156,7 @@ const toCell = (div: HTMLDivElement): HTMLDivElement => {
 }
 
 const saveFromBinaryData = (arrayBuffer: ArrayBuffer, fileName: string) => {
-  const blob = new Blob([arrayBuffer], { type: MVT_MIME_TYPE })
+  const blob = new Blob([arrayBuffer], { type: MVT_CONTENT_TYPES[0] })
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -189,15 +202,96 @@ const adjustInputTextWidth = (input: HTMLInputElement) => {
   if (textWidth) input.style.width = textWidth + 20 + 'px'
 }
 
-const updateControls = (
-  trackEmptyResponse: boolean,
-  trackOnlySuccessfulResponse: boolean,
-  mvtRequestPattern: string,
-) => {
-  trackEmptyResponseCheckBox.checked = Boolean(trackEmptyResponse)
-  trackOnlySuccessfulResponseCheckBox.checked = Boolean(trackOnlySuccessfulResponse)
-  mvtRequestPatternText.value = mvtRequestPattern
-  adjustInputTextWidth(mvtRequestPatternText)
+const isContentTypeMode = () => matchModeSelect.value === 'contentType'
+
+// Suggestions dropdown
+let suggestions: readonly string[] = MVT_CONTENT_TYPES
+let activeSuggestion = -1
+
+const closeSuggestions = () => {
+  matchValueOptions.classList.remove('open')
+  matchValueText.setAttribute('aria-expanded', 'false')
+  activeSuggestion = -1
+}
+
+const setActiveSuggestion = (index: number) => {
+  activeSuggestion = index
+  const items = [...matchValueOptions.children]
+  items.forEach((item, i) => item.classList.toggle('active', i === index))
+  if (index >= 0) items[index]?.scrollIntoView({ block: 'nearest' })
+}
+
+const commitMatchValue = () => {
+  if (isContentTypeMode()) applyContentType(matchValueText.value)
+  else applyRequestPattern(matchValueText.value)
+  adjustInputTextWidth(matchValueText)
+  updateSettings()
+}
+
+// An empty filter lists every suggestion, so clicking the field always shows the
+// full set even when it already holds one of them.
+const openSuggestions = (filter: string) => {
+  const needle = filter.trim().toLowerCase()
+  const matches = suggestions.filter((s) => !needle || s.toLowerCase().includes(needle))
+  matchValueOptions.replaceChildren(
+    ...matches.map((value) => {
+      const item = document.createElement('li')
+      item.textContent = value
+      item.setAttribute('role', 'option')
+      // mousedown runs before the input's blur, so the choice is not lost.
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        matchValueText.value = value
+        commitMatchValue()
+        closeSuggestions()
+      })
+      return item
+    }),
+  )
+  activeSuggestion = -1
+  if (!matches.length) {
+    closeSuggestions()
+    return
+  }
+  matchValueOptions.classList.add('open')
+  matchValueText.setAttribute('aria-expanded', 'true')
+}
+
+const applyMatchMode = (matchByContentType: boolean) => {
+  entriesManager.matchByContentType = matchByContentType
+  matchModeSelect.value = matchByContentType ? 'contentType' : 'urlPattern'
+  // Every mode transition funnels through here, so the suggestions are swapped
+  // in one place.
+  suggestions = matchByContentType ? MVT_CONTENT_TYPES : MVT_REQUEST_PATTERNS
+  closeSuggestions()
+}
+
+const applyRequestPattern = (pattern: string) => {
+  mvtRequestPattern = pattern
+  if (!pattern) return
+  try {
+    entriesManager.mvtRequestPatternRegExp = new RegExp(pattern, 'i')
+  } catch (e) {
+    console.log('Mvt Request Pattern is invalid', pattern)
+  }
+}
+
+const applyContentType = (contentType: string) => {
+  mvtContentType = contentType
+  entriesManager.mvtContentType = contentType
+}
+
+// The one text box edits whichever value the selected mode uses.
+const showMatchValue = () => {
+  const contentTypeMode = isContentTypeMode()
+  const value = contentTypeMode ? mvtContentType : mvtRequestPattern
+  matchValueText.title = contentTypeMode
+    ? 'Response content type to capture'
+    : 'Regular expression matched against the request URL'
+  // Only reassign when it really differs - assigning resets the caret, and this
+  // also runs in response to our own storage writes while the user is typing.
+  if (matchValueText.value !== value) matchValueText.value = value
+  adjustInputTextWidth(matchValueText)
 }
 
 const updateSettings = () => {
@@ -205,7 +299,9 @@ const updateSettings = () => {
     {
       trackEmptyResponse: trackEmptyResponseCheckBox.checked,
       trackOnlySuccessfulResponse: trackOnlySuccessfulResponseCheckBox.checked,
-      mvtRequestPattern: mvtRequestPatternText.value,
+      matchByContentType: isContentTypeMode(),
+      mvtRequestPattern,
+      mvtContentType,
     },
     () => {},
   )
@@ -213,23 +309,23 @@ const updateSettings = () => {
 
 // Setup
 chrome.storage.local.get(
-  ['trackEmptyResponse', 'trackOnlySuccessfulResponse', 'mvtRequestPattern'],
+  [
+    'trackEmptyResponse',
+    'trackOnlySuccessfulResponse',
+    'matchByContentType',
+    'mvtRequestPattern',
+    'mvtContentType',
+  ],
   async (r) => {
     entriesManager.trackEmptyResponse = Boolean(r.trackEmptyResponse)
     entriesManager.trackOnlySuccessfulResponse = Boolean(r.trackOnlySuccessfulResponse)
-    const mvtRequestPattern = r.mvtRequestPattern?.toString()
-    if (mvtRequestPattern) {
-      try {
-        entriesManager.mvtRequestPatternRegExp = new RegExp(mvtRequestPattern, 'i')
-      } catch (e) {
-        console.log('Mvt Request Pattern is invalid', r.mvtRequestPattern)
-      }
-    }
-    updateControls(
-      Boolean(r.trackEmptyResponse),
-      Boolean(r.trackOnlySuccessfulResponse),
-      r.mvtRequestPattern as string,
-    )
+    trackEmptyResponseCheckBox.checked = Boolean(r.trackEmptyResponse)
+    trackOnlySuccessfulResponseCheckBox.checked = Boolean(r.trackOnlySuccessfulResponse)
+    // Content type is the default when nothing has been stored yet.
+    applyMatchMode(r.matchByContentType === undefined ? true : Boolean(r.matchByContentType))
+    applyRequestPattern(r.mvtRequestPattern?.toString() || MVT_REQUEST_PATTERNS[0])
+    applyContentType(r.mvtContentType?.toString() || MVT_CONTENT_TYPES[0])
+    showMatchValue()
 
     await entriesManager.clear()
     chrome.devtools.network.onRequestFinished.addListener(entriesManager.handleNetworkRequest)
@@ -248,17 +344,16 @@ chrome.storage.local.onChanged.addListener((changes) => {
       changes['trackOnlySuccessfulResponse'].newValue,
     )
   }
-  if (changes['mvtRequestPattern']) {
-    const mvtRequestPattern = changes['mvtRequestPattern'].newValue?.toString()
-    if (mvtRequestPattern) {
-      try {
-        entriesManager.mvtRequestPatternRegExp = new RegExp(mvtRequestPattern, 'i')
-      } catch (e) {
-        console.log('Mvt Request Pattern is invalid', mvtRequestPattern)
-      }
-    } else console.log('Mvt Request Pattern is invalid', mvtRequestPattern)
-    mvtRequestPatternText.value = String(changes['mvtRequestPattern'].newValue)
+  if (changes['matchByContentType']) {
+    applyMatchMode(Boolean(changes['matchByContentType'].newValue))
   }
+  if (changes['mvtRequestPattern']) {
+    applyRequestPattern(changes['mvtRequestPattern'].newValue?.toString() ?? '')
+  }
+  if (changes['mvtContentType']) {
+    applyContentType(changes['mvtContentType'].newValue?.toString() ?? '')
+  }
+  showMatchValue()
 })
 
 // Register DOM event listeners
@@ -281,9 +376,41 @@ document.getElementById('clear')?.addEventListener('click', async (e) => {
 
 trackEmptyResponseCheckBox.addEventListener('change', updateSettings)
 trackOnlySuccessfulResponseCheckBox.addEventListener('change', updateSettings)
-mvtRequestPatternText.addEventListener('keyup', () => {
-  adjustInputTextWidth(mvtRequestPatternText)
+matchModeSelect.addEventListener('change', () => {
+  applyMatchMode(isContentTypeMode())
+  showMatchValue()
   updateSettings()
+})
+matchValueText.addEventListener('input', () => {
+  commitMatchValue()
+  openSuggestions(matchValueText.value)
+})
+matchValueText.addEventListener('focus', () => openSuggestions(''))
+// Also on click, so clicking an already-focused field reopens the list.
+matchValueText.addEventListener('click', () => openSuggestions(''))
+matchValueText.addEventListener('blur', closeSuggestions)
+matchValueText.addEventListener('keydown', (e) => {
+  const items = matchValueOptions.children
+  const isOpen = matchValueOptions.classList.contains('open')
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    if (!isOpen) return openSuggestions('')
+    setActiveSuggestion((activeSuggestion + 1) % items.length)
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    if (!isOpen) return
+    setActiveSuggestion((activeSuggestion <= 0 ? items.length : activeSuggestion) - 1)
+  } else if (e.key === 'Enter') {
+    const chosen = items[activeSuggestion]?.textContent
+    if (isOpen && chosen) {
+      e.preventDefault()
+      matchValueText.value = chosen
+      commitMatchValue()
+    }
+    closeSuggestions()
+  } else if (e.key === 'Escape') {
+    closeSuggestions()
+  }
 })
 
 document.addEventListener('click', async (e: MouseEvent) => {
@@ -315,7 +442,8 @@ document.addEventListener('click', async (e: MouseEvent) => {
         await new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)))
         viewTileContainer.innerHTML = ''
       }
-      setTimeout(() => {
+      setTimeout(async () => {
+        const { createJSONEditor } = await import('vanilla-jsoneditor/standalone.js')
         createJSONEditor({
           target: viewTileContainer,
           props: {

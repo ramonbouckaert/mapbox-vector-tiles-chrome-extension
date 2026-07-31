@@ -122,8 +122,8 @@
             display: grid;
             /*status, z, x, y, bytes, url, Σ layers, layer: Σ features, #started, #ended, time*/
             grid-template-columns: 50px 90px 90px 90px 70px auto 60px auto auto auto auto;
-            border-bottom: solid var(--table-border) 1px;;
-            border-left: solid var(--table-border) 1px;;
+            border-bottom: solid var(--table-border) 1px;
+            border-left: solid var(--table-border) 1px;
             box-sizing: border-box;
             overflow-y: auto;
 
@@ -147,12 +147,6 @@
             position: sticky;
             top: 0;
             background: var(--table-background);
-        }
-
-        #tilesTable [role=header], #tilesTable [role=cell] {
-            border-top: solid var(--table-border) 1px;
-            border-right: solid var(--table-border) 1px;
-            white-space: nowrap;
         }
 
         #tilesTable [role=header].wrap-content, #tilesTable [role=cell].wrap-content {
@@ -208,7 +202,7 @@
             position: relative;
         }
 
-        .setting-control, .setting-control input {
+        .setting-control, .setting-control input, .setting-control select {
             font-family: "Segoe UI", Tahoma, sans-serif;
             font-size: 12px;
         }
@@ -218,12 +212,11 @@
             padding-right: 10px;
         }
 
-        .setting-control {
-            display: inline-block;
-            padding-right: 10px;
+        .setting-control input[type=checkbox] {
+            vertical-align: middle;
         }
 
-        .setting-control input[type=checkbox] {
+        .setting-control select {
             vertical-align: middle;
         }
 
@@ -279,9 +272,52 @@
             display: contents;
         }
 
-        #mvtRequestPattern {
+        #matchValue {
             min-width: 80px;
             max-width: 400px;
+        }
+
+        /* Suggestions dropdown. A native <datalist> is not usable here: Chrome
+           suppresses its popup when the input already holds an exact option
+           match, which is this field's default state. */
+        .combo {
+            position: relative;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .combo-options {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            z-index: 3;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            min-width: 100%;
+            max-height: 220px;
+            overflow-y: auto;
+            white-space: nowrap;
+            background: var(--modal-background);
+            border: 1px solid var(--modal-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        }
+
+        .combo-options.open {
+            display: block;
+        }
+
+        .combo-options li {
+            padding: 3px 6px;
+            cursor: pointer;
+            color: var(--text);
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .combo-options li:hover, .combo-options li.active {
+            background: var(--hover-cell);
         }
 
         ul.legend {
@@ -298,7 +334,7 @@
             margin-right: 5px;
         }
 
-        ul li:before {
+        ul.legend li:before {
             content: '';
             width: 8px;
             height: 8px;
@@ -346,8 +382,17 @@
         <input type="checkbox" id="trackOnlySuccessfulResponse">
     </div>
     <div class="setting-control">
-        <label for="mvtRequestPattern">URL Pattern</label>
-        <input type="text" id="mvtRequestPattern">
+        <label for="matchMode">Capture by</label>
+        <select id="matchMode">
+            <option value="contentType">Content Type</option>
+            <option value="urlPattern">URL Pattern</option>
+        </select>
+        <span class="combo">
+            <input type="text" id="matchValue" autocomplete="off" role="combobox"
+                   aria-autocomplete="list" aria-expanded="false" aria-controls="matchValueOptions">
+            <!-- Options are populated from MVT_CONTENT_TYPES / MVT_REQUEST_PATTERNS -->
+            <ul id="matchValueOptions" class="combo-options" role="listbox"></ul>
+        </span>
     </div>
     <div class="setting-control right">
         <ul class="legend">

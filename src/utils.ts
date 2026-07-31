@@ -3,8 +3,25 @@ import { Hashery } from 'hashery'
 import {VectorTile} from "@mapbox/vector-tile";
 import type {Feature, GeoJSON} from "geojson";
 
-export const MVT_MIME_TYPE = 'application/vnd.mapbox-vector-tile'
 export const PORT_PREFIX = 'devtools-mapbox-vector-tiles-'
+
+// Suggested values offered by the "Capture by" autocomplete. The first entry of
+// each list is also the default used when nothing has been configured yet.
+export const MVT_CONTENT_TYPES = [
+  'application/vnd.mapbox-vector-tile',
+  'application/x-protobuf',
+  'application/protobuf',
+  'application/vnd.google.protobuf',
+  'application/octet-stream',
+] as const
+
+export const MVT_REQUEST_PATTERNS = [
+  '.*\\/(?<z>\\d+)\\/(?<x>\\d+)\\/(?<y>\\d+)\\.mvt[^\\/]*$',
+  '.*\\/(?<z>\\d+)\\/(?<x>\\d+)\\/(?<y>\\d+)[^\\/]*$',
+  '.*\\/(?<z>\\d+)\\/(?<x>\\d+)\\/(?<y>\\d+)\\.pbf[^\\/]*$',
+  '.*\\/(?<z>\\d+)\\/(?<x>\\d+)\\/(?<y>\\d+)\\.(?:mvt|pbf|vector\\.pbf)[^\\/]*$',
+  '.*\\/(?<z>\\d+)\\/(?<x>\\d+)\\/(?<y>\\d+)(?:@\\d+x)?\\.(?:mvt|pbf)[^\\/]*$',
+] as const
 
 export const isTileEmpty = (tile: VectorTile): boolean => {
   for (const layerName in tile.layers) {
@@ -33,8 +50,25 @@ export const tileToGeoJson = (
   }, {})
 }
 
+// Coordinates are NaN when a content-type-matched URL has no recognisable z/x/y.
+export const formatCoord = (n: number): string => (Number.isFinite(n) ? String(n) : '?')
+
 export const formatTileId = (entry: TableEntry): string =>
-  `{z: ${entry.z}, x: ${entry.x}, y: ${entry.y}}`
+  `{z: ${formatCoord(entry.z)}, x: ${formatCoord(entry.x)}, y: ${formatCoord(entry.y)}}`
+
+// Three slash-separated numbers appearing anywhere in the URL. Each number must
+// be a whole path segment, so "/data/v3/14/1234/5678.pbf" yields 14/1234/5678
+// rather than starting mid-segment at the "3" of "v3".
+const TILE_COORDS_REGEXP = /(?:^|\/)(\d+)\/(\d+)\/(\d+)(?!\d)/g
+
+export const extractTileCoords = (url: string): { z: number; x: number; y: number } | undefined => {
+  // Best-effort extraction: prefer the last (deepest) triple, since leading path
+  // segments are more likely to be version or account numbers.
+  const matches = [...url.matchAll(TILE_COORDS_REGEXP)]
+  const last = matches[matches.length - 1]
+  if (!last) return undefined
+  return { z: parseInt(last[1] ?? ''), x: parseInt(last[2] ?? ''), y: parseInt(last[3] ?? '') }
+}
 
 export const isTableEntry = (a: unknown): a is TableEntry =>
   typeof a === 'object' && !!a && 'x' in a && 'y' in a && 'z' in a
@@ -54,18 +88,26 @@ export const formatTime = (dateString: string): string => {
   if (!dateString) return ''
   const d = new Date(dateString)
   const pad = (n: number, len = 2) => String(n).padStart(len, '0')
-  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}.${pad(d.getUTCMilliseconds(), 3)}`
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`
 }
 
 const hasher = new Hashery()
 
-export const hashTableEntry = async (tableEntry: TableEntry): Promise<string> => {
-  return await hasher.toHash({
-    x: tableEntry.x,
-    y: tableEntry.y,
-    z: tableEntry.z,
-    url: tableEntry.url,
-    startedDateTime: tableEntry.startedDateTime,
-    startOrder: tableEntry.startOrder,
-  })
+// Memoized per entry object - the hashed fields never change after creation.
+const hashCache = new WeakMap<TableEntry, Promise<string>>()
+
+export const hashTableEntry = (tableEntry: TableEntry): Promise<string> => {
+  let hash = hashCache.get(tableEntry)
+  if (!hash) {
+    hash = hasher.toHash({
+      x: tableEntry.x,
+      y: tableEntry.y,
+      z: tableEntry.z,
+      url: tableEntry.url,
+      startedDateTime: tableEntry.startedDateTime,
+      startOrder: tableEntry.startOrder,
+    })
+    hashCache.set(tableEntry, hash)
+  }
+  return hash
 }

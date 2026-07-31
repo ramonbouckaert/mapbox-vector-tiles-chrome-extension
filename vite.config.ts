@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import { crx } from '@crxjs/vite-plugin'
-import manifest from './src/manifest'
+import manifest from './src/manifest.ts'
 import { resolve } from 'node:path'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
@@ -12,7 +12,7 @@ export default defineConfig(() => {
       license: true,
       rollupOptions: {
         input: {
-          'mvt-tiles-panel': resolve(__dirname, 'mvt-tiles-panel.html'),
+          'mvt-tiles-panel': resolve(import.meta.dirname, 'mvt-tiles-panel.html'),
         },
         output: {
           chunkFileNames: 'assets/chunk-[hash].js',
