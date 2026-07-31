@@ -1,427 +1,442 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+  <head>
     <style>
+      :root {
+        color-scheme: light;
+        --background: #ffffff;
+        --table-background: #f9f9f9;
+        --table-border: #cccccc;
+        --table-divider: #dddddd;
+        --pending-text: #bebcdd;
+        --invalid-text: #e0a4a4;
+        --hover-cell: #ffffaa;
+        --text: #111111;
+        --modal-background: #fefefe;
+        --modal-border: #888888;
+        --close-button: #aaaaaa;
+        --close-button-hover: #000000;
+      }
+
+      @media (prefers-color-scheme: dark) {
         :root {
-            color-scheme: light;
-            --background: #ffffff;
-            --table-background: #f9f9f9;
-            --table-border: #cccccc;
-            --table-divider: #dddddd;
-            --pending-text: #bebcdd;
-            --invalid-text: #e0a4a4;
-            --hover-cell: #ffffaa;
-            --text: #111111;
-            --modal-background: #fefefe;
-            --modal-border: #888888;
-            --close-button: #aaaaaa;
-            --close-button-hover: #000000;
+          color-scheme: dark;
+          --background: #0f1115;
+          --table-background: #151922;
+          --table-border: #2a2f3a;
+          --table-divider: #242a33;
+          --pending-text: #9a98b8;
+          --invalid-text: #ff8a8a;
+          --hover-cell: #2a2d12;
+          --text: #e9e9ee;
+          --modal-background: #121622;
+          --modal-border: #343b48;
+          --close-button: #8f95a3;
+          --close-button-hover: #ffffff;
+
+          /* Override the colour of the JSON viewer */
+          --jse-theme: dark;
+          --jse-theme-color: #2f6dd0;
+          --jse-theme-color-highlight: #467cd2;
+          --jse-background-color: #1e1e1e;
+          --jse-text-color: #d4d4d4;
+          --jse-text-color-inverse: #4d4d4d;
+          --jse-main-border: 1px solid #4f4f4f;
+          --jse-menu-color: #fff;
+          --jse-modal-background: #2f2f2f;
+          --jse-modal-overlay-background: rgba(0, 0, 0, 0.5);
+          --jse-modal-code-background: #2f2f2f;
+          --jse-tooltip-color: var(--jse-text-color);
+          --jse-tooltip-background: #4b4b4b;
+          --jse-tooltip-border: 1px solid #737373;
+          --jse-tooltip-action-button-color: inherit;
+          --jse-tooltip-action-button-background: #737373;
+          --jse-panel-background: #333333;
+          --jse-panel-background-border: 1px solid #464646;
+          --jse-panel-color: var(--jse-text-color);
+          --jse-panel-color-readonly: #737373;
+          --jse-panel-border: 1px solid #3c3c3c;
+          --jse-panel-button-color-highlight: #e5e5e5;
+          --jse-panel-button-background-highlight: #464646;
+          --jse-key-color: #9cdcfe;
+          --jse-value-color: var(--jse-text-color);
+          --jse-value-color-number: #b5cea8;
+          --jse-value-color-boolean: #569cd6;
+          --jse-value-color-null: #569cd6;
+          --jse-value-color-string: #ce9178;
+          --jse-value-color-url: #ce9178;
+          --jse-delimiter-color: #949494;
+          --jse-edit-outline: 2px solid var(--jse-text-color);
+          --jse-selection-background-color: #464646;
+          --jse-selection-background-inactive-color: #333333;
+          --jse-hover-background-color: #343434;
+          --jse-active-line-background-color: rgba(255, 255, 255, 0.06);
+          --jse-search-match-background-color: #343434;
+          --jse-collapsed-items-background-color: #333333;
+          --jse-collapsed-items-selected-background-color: #565656;
+          --jse-collapsed-items-link-color: #b2b2b2;
+          --jse-collapsed-items-link-color-highlight: #ec8477;
+          --jse-search-match-color: #724c27;
+          --jse-search-match-outline: 1px solid #966535;
+          --jse-search-match-active-color: #9f6c39;
+          --jse-search-match-active-outline: 1px solid #bb7f43;
+          --jse-tag-background: #444444;
+          --jse-tag-color: #bdbdbd;
+          --jse-table-header-background: #333333;
+          --jse-table-header-background-highlight: #424242;
+          --jse-table-row-odd-background: rgba(255, 255, 255, 0.1);
+          --jse-input-background: #3d3d3d;
+          --jse-input-border: var(--jse-main-border);
+          --jse-button-background: #808080;
+          --jse-button-background-highlight: #7a7a7a;
+          --jse-button-color: #e0e0e0;
+          --jse-button-secondary-background: #494949;
+          --jse-button-secondary-background-highlight: #5d5d5d;
+          --jse-button-secondary-background-disabled: #9d9d9d;
+          --jse-button-secondary-color: var(--jse-text-color);
+          --jse-a-color: #55abff;
+          --jse-a-color-highlight: #4387c9;
+          --jse-svelte-select-background: #3d3d3d;
+          --jse-svelte-select-border: 1px solid #4f4f4f;
+          --list-background: #3d3d3d;
+          --item-hover-bg: #505050;
+          --multi-item-bg: #5b5b5b;
+          --input-color: #d4d4d4;
+          --multi-clear-bg: #8a8a8a;
+          --multi-item-clear-icon-color: #d4d4d4;
+          --multi-item-outline: 1px solid #696969;
+          --list-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
+          --jse-color-picker-background: #656565;
+          --jse-color-picker-border-box-shadow: #8c8c8c 0 0 0 1px;
         }
+      }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                color-scheme: dark;
-                --background: #0f1115;
-                --table-background: #151922;
-                --table-border: #2a2f3a;
-                --table-divider: #242a33;
-                --pending-text: #9a98b8;
-                --invalid-text: #ff8a8a;
-                --hover-cell: #2a2d12;
-                --text: #e9e9ee;
-                --modal-background: #121622;
-                --modal-border: #343b48;
-                --close-button: #8f95a3;
-                --close-button-hover: #ffffff;
+      html,
+      body {
+        background-color: var(--background);
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
 
-                /* Override the colour of the JSON viewer */
-                --jse-theme: dark;
-                --jse-theme-color: #2f6dd0;
-                --jse-theme-color-highlight: #467cd2;
-                --jse-background-color: #1e1e1e;
-                --jse-text-color: #d4d4d4;
-                --jse-text-color-inverse: #4d4d4d;
-                --jse-main-border: 1px solid #4f4f4f;
-                --jse-menu-color: #fff;
-                --jse-modal-background: #2f2f2f;
-                --jse-modal-overlay-background: rgba(0, 0, 0, 0.5);
-                --jse-modal-code-background: #2f2f2f;
-                --jse-tooltip-color: var(--jse-text-color);
-                --jse-tooltip-background: #4b4b4b;
-                --jse-tooltip-border: 1px solid #737373;
-                --jse-tooltip-action-button-color: inherit;
-                --jse-tooltip-action-button-background: #737373;
-                --jse-panel-background: #333333;
-                --jse-panel-background-border: 1px solid #464646;
-                --jse-panel-color: var(--jse-text-color);
-                --jse-panel-color-readonly: #737373;
-                --jse-panel-border: 1px solid #3c3c3c;
-                --jse-panel-button-color-highlight: #e5e5e5;
-                --jse-panel-button-background-highlight: #464646;
-                --jse-key-color: #9cdcfe;
-                --jse-value-color: var(--jse-text-color);
-                --jse-value-color-number: #b5cea8;
-                --jse-value-color-boolean: #569cd6;
-                --jse-value-color-null: #569cd6;
-                --jse-value-color-string: #ce9178;
-                --jse-value-color-url: #ce9178;
-                --jse-delimiter-color: #949494;
-                --jse-edit-outline: 2px solid var(--jse-text-color);
-                --jse-selection-background-color: #464646;
-                --jse-selection-background-inactive-color: #333333;
-                --jse-hover-background-color: #343434;
-                --jse-active-line-background-color: rgba(255, 255, 255, 0.06);
-                --jse-search-match-background-color: #343434;
-                --jse-collapsed-items-background-color: #333333;
-                --jse-collapsed-items-selected-background-color: #565656;
-                --jse-collapsed-items-link-color: #b2b2b2;
-                --jse-collapsed-items-link-color-highlight: #ec8477;
-                --jse-search-match-color: #724c27;
-                --jse-search-match-outline: 1px solid #966535;
-                --jse-search-match-active-color: #9f6c39;
-                --jse-search-match-active-outline: 1px solid #bb7f43;
-                --jse-tag-background: #444444;
-                --jse-tag-color: #bdbdbd;
-                --jse-table-header-background: #333333;
-                --jse-table-header-background-highlight: #424242;
-                --jse-table-row-odd-background: rgba(255, 255, 255, 0.1);
-                --jse-input-background: #3d3d3d;
-                --jse-input-border: var(--jse-main-border);
-                --jse-button-background: #808080;
-                --jse-button-background-highlight: #7a7a7a;
-                --jse-button-color: #e0e0e0;
-                --jse-button-secondary-background: #494949;
-                --jse-button-secondary-background-highlight: #5d5d5d;
-                --jse-button-secondary-background-disabled: #9d9d9d;
-                --jse-button-secondary-color: var(--jse-text-color);
-                --jse-a-color: #55abff;
-                --jse-a-color-highlight: #4387c9;
-                --jse-svelte-select-background: #3d3d3d;
-                --jse-svelte-select-border: 1px solid #4f4f4f;
-                --list-background: #3d3d3d;
-                --item-hover-bg: #505050;
-                --multi-item-bg: #5b5b5b;
-                --input-color: #d4d4d4;
-                --multi-clear-bg: #8a8a8a;
-                --multi-item-clear-icon-color: #d4d4d4;
-                --multi-item-outline: 1px solid #696969;
-                --list-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
-                --jse-color-picker-background: #656565;
-                --jse-color-picker-border-box-shadow: #8c8c8c 0 0 0 1px;
-            }
-        }
+      #tilesTable {
+        display: grid;
+        /*status, z, x, y, bytes, url, Σ layers, layer: Σ features, #started, #ended, time*/
+        grid-template-columns: 50px 90px 90px 90px 70px auto 60px auto auto auto auto;
+        border-bottom: solid var(--table-border) 1px;
+        border-left: solid var(--table-border) 1px;
+        box-sizing: border-box;
+        overflow-y: auto;
 
-        html, body {
-            background-color: var(--background);
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
+        height: auto;
+        max-height: calc(100% - 30px);
+        font-size: 0.9em;
+        font-family: verdana, sans-serif;
+        user-select: none;
+        margin-left: 3px;
+        margin-right: 3px;
+      }
 
-        #tilesTable {
-            display: grid;
-            /*status, z, x, y, bytes, url, Σ layers, layer: Σ features, #started, #ended, time*/
-            grid-template-columns: 50px 90px 90px 90px 70px auto 60px auto auto auto auto;
-            border-bottom: solid var(--table-border) 1px;
-            border-left: solid var(--table-border) 1px;
-            box-sizing: border-box;
-            overflow-y: auto;
+      #tilesTable [role='columnheader'],
+      #tilesTable [role='cell'] {
+        border-top: solid var(--table-border) 1px;
+        border-right: solid var(--table-border) 1px;
+        white-space: nowrap;
+      }
 
-            height: auto;
-            max-height: calc(100% - 30px);
-            font-size: 0.9em;
-            font-family: verdana, sans-serif;
-            user-select: none;
-            margin-left: 3px;
-            margin-right: 3px;
-        }
+      #tilesTable [role='columnheader'] {
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        background: var(--table-background);
+      }
 
-        #tilesTable [role=header], #tilesTable [role=cell] {
-            border-top: solid var(--table-border) 1px;
-            border-right: solid var(--table-border) 1px;
-            white-space: nowrap;
-        }
+      #tilesTable [role='columnheader'].wrap-content,
+      #tilesTable [role='cell'].wrap-content {
+        white-space: pre-wrap;
+      }
 
-        #tilesTable [role=header] {
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            background: var(--table-background);
-        }
+      #tilesTable [role='row'] {
+        display: contents;
+      }
 
-        #tilesTable [role=header].wrap-content, #tilesTable [role=cell].wrap-content {
-            white-space: pre-wrap;
-        }
+      #tilesTable [role='row'].pending-tile [role='cell'] {
+        color: var(--pending-text);
+      }
 
-        #tilesTable [role=row] {
-            display: contents;
-        }
+      #tilesTable [role='row'].empty-tile [role='cell'] {
+        color: var(--pending-text);
+      }
 
-        #tilesTable [role=row].pending-tile [role=cell] {
-            color: var(--pending-text);
-        }
+      #tilesTable [role='row'].no-success-tile [role='cell'] {
+        color: var(--invalid-text);
+      }
 
-        #tilesTable [role=row].empty-tile [role=cell] {
-            color: var(--pending-text);
-        }
+      #tilesTable [role='row']:hover [role='cell'] {
+        background-color: var(--hover-cell);
+      }
 
-        #tilesTable [role=row].no-success-tile [role=cell] {
-            color: var(--invalid-text);
-        }
+      #tilesTable [role='row'].empty-tile a,
+      #tilesTable [role='row'].empty-tile a:any-link,
+      #tilesTable [role='row'].empty-tile a:link,
+      #tilesTable [role='row'].empty-tile a:hover,
+      #tilesTable [role='row'].empty-tile a:active,
+      #tilesTable [role='row'].empty-tile a:visited,
+      #tilesTable [role='row'].pending-tile a,
+      #tilesTable [role='row'].pending-tile a:any-link,
+      #tilesTable [role='row'].pending-tile a:link,
+      #tilesTable [role='row'].pending-tile a:hover,
+      #tilesTable [role='row'].pending-tile a:active,
+      #tilesTable [role='row'].pending-tile a:visited {
+        color: var(--pending-text);
+      }
 
-        #tilesTable [role=row]:hover [role=cell] {
-            background-color: var(--hover-cell);
-        }
+      #tilesTable [role='row'].no-success-tile a,
+      #tilesTable [role='row'].no-success-tile a:any-link,
+      #tilesTable [role='row'].no-success-tile a:link,
+      #tilesTable [role='row'].no-success-tile a:hover,
+      #tilesTable [role='row'].no-success-tile a:active,
+      #tilesTable [role='row'].no-success-tile a:visited {
+        color: var(--invalid-text);
+      }
 
-        #tilesTable [role=row].empty-tile a,
-        #tilesTable [role=row].empty-tile a:any-link,
-        #tilesTable [role=row].empty-tile a:link,
-        #tilesTable [role=row].empty-tile a:hover,
-        #tilesTable [role=row].empty-tile a:active,
-        #tilesTable [role=row].empty-tile a:visited,
-        #tilesTable [role=row].pending-tile a,
-        #tilesTable [role=row].pending-tile a:any-link,
-        #tilesTable [role=row].pending-tile a:link,
-        #tilesTable [role=row].pending-tile a:hover,
-        #tilesTable [role=row].pending-tile a:active,
-        #tilesTable [role=row].pending-tile a:visited {
-            color: var(--pending-text);
-        }
+      #settings-panel {
+        padding: 3px;
+        position: relative;
+      }
 
-        #tilesTable [role=row].no-success-tile a,
-        #tilesTable [role=row].no-success-tile a:any-link,
-        #tilesTable [role=row].no-success-tile a:link,
-        #tilesTable [role=row].no-success-tile a:hover,
-        #tilesTable [role=row].no-success-tile a:active,
-        #tilesTable [role=row].no-success-tile a:visited {
-            color: var(--invalid-text);
-        }
+      .setting-control,
+      .setting-control input,
+      .setting-control select {
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        font-size: 12px;
+      }
 
-        #settings-panel {
-            padding: 3px;
-            position: relative;
-        }
+      .setting-control {
+        display: inline-block;
+        padding-right: 10px;
+      }
 
-        .setting-control, .setting-control input, .setting-control select {
-            font-family: "Segoe UI", Tahoma, sans-serif;
-            font-size: 12px;
-        }
+      .setting-control input[type='checkbox'] {
+        vertical-align: middle;
+      }
 
-        .setting-control {
-            display: inline-block;
-            padding-right: 10px;
-        }
+      .setting-control select {
+        vertical-align: middle;
+      }
 
-        .setting-control input[type=checkbox] {
-            vertical-align: middle;
-        }
+      .setting-control.right {
+        position: absolute;
+        right: 0;
+      }
 
-        .setting-control select {
-            vertical-align: middle;
-        }
+      /*modal dialog*/
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0, 0, 0);
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 20px 30px 3px 30px;
+        box-sizing: border-box;
+      }
 
-        .setting-control.right {
-            position: absolute;
-            right: 0;
-        }
+      .modal-content {
+        background-color: var(--modal-background);
+        border: 1px solid var(--modal-border);
+        height: 100%;
+        box-sizing: border-box;
+        position: relative;
+        margin: auto;
+        z-index: 1;
+      }
 
-        /*modal dialog*/
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0, 0, 0);
-            background-color: rgba(0, 0, 0, 0.4);
-            padding: 20px 30px 3px 30px;
-            box-sizing: border-box;
-        }
+      .viewTileDialog_closeButton {
+        color: var(--close-button);
+        font-size: 28px;
+        line-height: 28px;
+        font-weight: bold;
+        top: 0;
+        right: 25px;
+        position: absolute;
+        z-index: 2;
+      }
 
-        .modal-content {
-            background-color: var(--modal-background);
-            border: 1px solid var(--modal-border);
-            height: 100%;
-            box-sizing: border-box;
-            position: relative;
-            margin: auto;
-            z-index: 1;
-        }
+      .viewTileDialog_closeButton:hover,
+      .viewTileDialog_closeButton:focus {
+        color: var(--close-button-hover);
+        text-decoration: none;
+        cursor: pointer;
+      }
 
-        .viewTileDialog_closeButton {
-            color: var(--close-button);
-            font-size: 28px;
-            line-height: 28px;
-            font-weight: bold;
-            top: 0;
-            right: 25px;
-            position: absolute;
-            z-index: 2;
-        }
+      #viewTileContainer {
+        display: contents;
+      }
 
-        .viewTileDialog_closeButton:hover, .viewTileDialog_closeButton:focus {
-            color: var(--close-button-hover);
-            text-decoration: none;
-            cursor: pointer;
-        }
+      #matchValue {
+        min-width: 80px;
+        max-width: 400px;
+      }
 
-        #viewTileContainer {
-            display: contents;
-        }
-
-        #matchValue {
-            min-width: 80px;
-            max-width: 400px;
-        }
-
-        /* Suggestions dropdown. A native <datalist> is not usable here: Chrome
+      /* Suggestions dropdown. A native <datalist> is not usable here: Chrome
            suppresses its popup when the input already holds an exact option
            match, which is this field's default state. */
-        .combo {
-            position: relative;
-            display: inline-block;
-            vertical-align: middle;
-        }
+      .combo {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+      }
 
-        .combo-options {
-            display: none;
-            position: absolute;
-            left: 0;
-            top: 100%;
-            z-index: 3;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            min-width: 100%;
-            max-height: 220px;
-            overflow-y: auto;
-            white-space: nowrap;
-            background: var(--modal-background);
-            border: 1px solid var(--modal-border);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-        }
+      .combo-options {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: 100%;
+        z-index: 3;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        min-width: 100%;
+        max-height: 220px;
+        overflow-y: auto;
+        white-space: nowrap;
+        background: var(--modal-background);
+        border: 1px solid var(--modal-border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      }
 
-        .combo-options.open {
-            display: block;
-        }
+      .combo-options.open {
+        display: block;
+      }
 
-        .combo-options li {
-            padding: 3px 6px;
-            cursor: pointer;
-            color: var(--text);
-            font-family: monospace;
-            font-size: 11px;
-        }
+      .combo-options li {
+        padding: 3px 6px;
+        cursor: pointer;
+        color: var(--text);
+        font-family: monospace;
+        font-size: 11px;
+      }
 
-        .combo-options li:hover, .combo-options li.active {
-            background: var(--hover-cell);
-        }
+      .combo-options li:hover,
+      .combo-options li.active {
+        background: var(--hover-cell);
+      }
 
-        ul.legend {
-            padding-inline-start: 0;
-            padding-inline-end: 0;
-            margin-block-start: 0;
-            margin-block-end: 0;
-            margin-inline-start: 0;
-            margin-inline-end: 0;
-        }
+      ul.legend {
+        padding-inline-start: 0;
+        padding-inline-end: 0;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-inline-start: 0;
+        margin-inline-end: 0;
+      }
 
-        ul.legend li {
-            display: inline-block;
-            margin-right: 5px;
-        }
+      ul.legend li {
+        display: inline-block;
+        margin-right: 5px;
+      }
 
-        ul.legend li:before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-right: 2px;
-        }
+      ul.legend li:before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-right: 2px;
+      }
 
-        ul li.success:before {
-            background: var(--text);
-        }
+      ul.legend li.success:before {
+        background: var(--text);
+      }
 
-        ul li.empty-tile:before {
-            background: var(--pending-text);
-        }
+      ul.legend li.empty-tile:before {
+        background: var(--pending-text);
+      }
 
-        ul li.no-success-tile:before {
-            background: var(--invalid-text);
-        }
+      ul.legend li.no-success-tile:before {
+        background: var(--invalid-text);
+      }
 
-        #loadingIndicator {
-            font-size: 16px;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text);
-            font-family: verdana, sans-serif;
-        }
-
+      #loadingIndicator {
+        font-size: 16px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text);
+        font-family: verdana, sans-serif;
+      }
     </style>
     <title>Mapbox Vector Tiles</title>
-</head>
-<body>
-<div id="settings-panel">
-    <div class="setting-control">
+  </head>
+  <body>
+    <div id="settings-panel">
+      <div class="setting-control">
         <a id="clear" href="javascript:void(0)">Clear All</a>
-    </div>
-    <div class="setting-control">
+      </div>
+      <div class="setting-control">
         <label for="trackEmptyResponse">Track Empty Responses</label>
-        <input type="checkbox" id="trackEmptyResponse">
-    </div>
-    <div class="setting-control">
+        <input type="checkbox" id="trackEmptyResponse" />
+      </div>
+      <div class="setting-control">
         <label for="trackOnlySuccessfulResponse">Track Only Successful Responses</label>
-        <input type="checkbox" id="trackOnlySuccessfulResponse">
-    </div>
-    <div class="setting-control">
+        <input type="checkbox" id="trackOnlySuccessfulResponse" />
+      </div>
+      <div class="setting-control">
         <label for="matchMode">Capture by</label>
         <select id="matchMode">
-            <option value="contentType">Content Type</option>
-            <option value="urlPattern">URL Pattern</option>
+          <option value="contentType">Content Type</option>
+          <option value="urlPattern">URL Pattern</option>
         </select>
         <span class="combo">
-            <input type="text" id="matchValue" autocomplete="off" role="combobox"
-                   aria-autocomplete="list" aria-expanded="false" aria-controls="matchValueOptions">
-            <!-- Options are populated from MVT_CONTENT_TYPES / MVT_REQUEST_PATTERNS -->
-            <ul id="matchValueOptions" class="combo-options" role="listbox"></ul>
+          <input
+            type="text"
+            id="matchValue"
+            autocomplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="false"
+            aria-controls="matchValueOptions"
+          />
+          <!-- Options are populated from MVT_CONTENT_TYPES / MVT_REQUEST_PATTERNS -->
+          <ul id="matchValueOptions" class="combo-options" role="listbox"></ul>
         </span>
-    </div>
-    <div class="setting-control right">
+      </div>
+      <div class="setting-control right">
         <ul class="legend">
-            <li class="success"><span>Success</span></li>
-            <li class="empty-tile"><span>Success but Empty</span></li>
-            <li class="no-success-tile"><span>No Success or Cancelled</span></li>
+          <li class="success"><span>Success</span></li>
+          <li class="empty-tile"><span>Success but Empty</span></li>
+          <li class="no-success-tile"><span>No Success or Cancelled</span></li>
         </ul>
+      </div>
     </div>
-</div>
 
-<div id="tilesTable">
-    <div role="header">status</div>
-    <div role="header">z</div>
-    <div role="header">x</div>
-    <div role="header">y</div>
-    <div role="header">bytes</div>
-    <div role="header">url</div>
-    <div role="header" class="wrap-content">&#8721; layers</div>
-    <div role="header" class="wrap-content">layer: &#8721; features</div>
-    <div role="header">#started</div>
-    <div role="header">#ended</div>
-    <div role="header">time</div>
-</div>
-<div id="viewTileDialog" class="modal">
-    <div class="modal-content">
+    <div id="tilesTable" role="table" aria-label="Loaded vector tiles">
+      <div role="row" id="tilesTableHeaderRow">
+        <div role="columnheader">status</div>
+        <div role="columnheader">z</div>
+        <div role="columnheader">x</div>
+        <div role="columnheader">y</div>
+        <div role="columnheader">bytes</div>
+        <div role="columnheader">url</div>
+        <div role="columnheader" class="wrap-content">&#8721; layers</div>
+        <div role="columnheader" class="wrap-content">layer: &#8721; features</div>
+        <div role="columnheader">#started</div>
+        <div role="columnheader">#ended</div>
+        <div role="columnheader">time</div>
+      </div>
+    </div>
+    <div id="viewTileDialog" class="modal">
+      <div class="modal-content">
         <span class="viewTileDialog_closeButton">&times;</span>
         <div id="viewTileContainer"></div>
+      </div>
     </div>
-</div>
-<script type="module" src="src/mvt-tiles-panel.ts"></script>
-</body>
+    <script type="module" src="src/mvt-tiles-panel.ts"></script>
+  </body>
 </html>

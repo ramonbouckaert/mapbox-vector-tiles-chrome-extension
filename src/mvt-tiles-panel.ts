@@ -6,23 +6,34 @@ import {
   isTableEntry,
   MVT_CONTENT_TYPES,
   MVT_REQUEST_PATTERNS,
+  NEVER_MATCHES,
   formatCoord,
   formatTileId,
   PORT_PREFIX,
   formatTime,
+  tileFileName,
 } from './utils'
 import { EntriesManager } from './entries-manager'
 
 // Deps
 const tabId = chrome.devtools.inspectedWindow.tabId
 const connectToServiceWorker = () => {
-  const port = chrome.runtime.connect({ name: `${PORT_PREFIX}${tabId}` })
+  // chrome.runtime.id is undefined once the extension is reloaded or updated;
+  // this panel is then orphaned and retrying would throw once a second forever.
+  if (!chrome.runtime?.id) return
+  let port: chrome.runtime.Port
+  try {
+    port = chrome.runtime.connect({ name: `${PORT_PREFIX}${tabId}` })
+  } catch {
+    return
+  }
   // The port drops whenever the service worker is stopped for idling - reconnect
   // so the worker keeps tracking this panel and cleans up when it really closes.
   port.onDisconnect.addListener(() => setTimeout(connectToServiceWorker, 1000))
 }
 connectToServiceWorker()
-const entriesManager = new EntriesManager(String(tabId),
+const entriesManager = new EntriesManager(
+  String(tabId),
   // onAdd
   (entry) => doAutoScrollableOperation(() => processPendingEntry(entry)),
   // onUpdate
@@ -147,7 +158,8 @@ const doAutoScrollableOperation = async (operation: () => Promise<void>) => {
 
 const onClear = async () => {
   await entriesManager.clear()
-  tilesTable.querySelectorAll('[role=row]').forEach((row) => row.remove())
+  // The header is a row too, so it has to be spared here.
+  tilesTable.querySelectorAll('[role=row]:not(#tilesTableHeaderRow)').forEach((row) => row.remove())
 }
 
 const toCell = (div: HTMLDivElement): HTMLDivElement => {
@@ -173,7 +185,7 @@ const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
     e.stopPropagation()
     try {
       const blob = await entriesManager.getBlobForEntry(entry)
-      saveFromBinaryData(await blob.arrayBuffer(), `${entry.z}_${entry.x}_${entry.y}.mvt`)
+      saveFromBinaryData(await blob.arrayBuffer(), tileFileName(entry))
     } catch (error) {
       const message = `Loading failed for tile ${formatTileId(entry)}`
       console.error(message, error)
@@ -187,9 +199,9 @@ const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
 
 // Misc helper functions
 //http://qaru.site/questions/88685/auto-scaling-inputtype-text-to-width-of-value
+const textWidthCanvas = document.createElement('canvas')
 const getTextWidth = (text: string, fontSize: string, fontName: string, fontWeight: string) => {
-  const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
+  const context = textWidthCanvas.getContext('2d')
   if (context) {
     context.font = fontWeight + ' ' + fontSize + ' ' + fontName
     return context.measureText(text).width
@@ -211,6 +223,7 @@ let activeSuggestion = -1
 const closeSuggestions = () => {
   matchValueOptions.classList.remove('open')
   matchValueText.setAttribute('aria-expanded', 'false')
+  matchValueText.removeAttribute('aria-activedescendant')
   activeSuggestion = -1
 }
 
@@ -218,7 +231,13 @@ const setActiveSuggestion = (index: number) => {
   activeSuggestion = index
   const items = [...matchValueOptions.children]
   items.forEach((item, i) => item.classList.toggle('active', i === index))
-  if (index >= 0) items[index]?.scrollIntoView({ block: 'nearest' })
+  const active = index >= 0 ? items[index] : undefined
+  if (active) {
+    active.scrollIntoView({ block: 'nearest' })
+    matchValueText.setAttribute('aria-activedescendant', active.id)
+  } else {
+    matchValueText.removeAttribute('aria-activedescendant')
+  }
 }
 
 const commitMatchValue = () => {
@@ -234,9 +253,10 @@ const openSuggestions = (filter: string) => {
   const needle = filter.trim().toLowerCase()
   const matches = suggestions.filter((s) => !needle || s.toLowerCase().includes(needle))
   matchValueOptions.replaceChildren(
-    ...matches.map((value) => {
+    ...matches.map((value, index) => {
       const item = document.createElement('li')
       item.textContent = value
+      item.id = `matchValueOption-${index}`
       item.setAttribute('role', 'option')
       // mousedown runs before the input's blur, so the choice is not lost.
       item.addEventListener('mousedown', (e) => {
@@ -268,7 +288,11 @@ const applyMatchMode = (matchByContentType: boolean) => {
 
 const applyRequestPattern = (pattern: string) => {
   mvtRequestPattern = pattern
-  if (!pattern) return
+  // An empty box captures nothing, matching how an empty content type behaves.
+  if (!pattern) {
+    entriesManager.mvtRequestPatternRegExp = NEVER_MATCHES
+    return
+  }
   try {
     entriesManager.mvtRequestPatternRegExp = new RegExp(pattern, 'i')
   } catch (e) {
@@ -294,17 +318,21 @@ const showMatchValue = () => {
   adjustInputTextWidth(matchValueText)
 }
 
+// Coalesced, because the match value saves on every keystroke and each write
+// echoes back through storage.onChanged.
+let saveSettingsTimer: ReturnType<typeof setTimeout> | undefined
 const updateSettings = () => {
-  chrome.storage.local.set(
-    {
+  if (saveSettingsTimer !== undefined) clearTimeout(saveSettingsTimer)
+  saveSettingsTimer = setTimeout(() => {
+    saveSettingsTimer = undefined
+    chrome.storage.local.set({
       trackEmptyResponse: trackEmptyResponseCheckBox.checked,
       trackOnlySuccessfulResponse: trackOnlySuccessfulResponseCheckBox.checked,
       matchByContentType: isContentTypeMode(),
       mvtRequestPattern,
       mvtContentType,
-    },
-    () => {},
-  )
+    })
+  }, 200)
 }
 
 // Setup
@@ -344,6 +372,8 @@ chrome.storage.local.onChanged.addListener((changes) => {
       changes['trackOnlySuccessfulResponse'].newValue,
     )
   }
+  const matchChanged =
+    changes['matchByContentType'] || changes['mvtRequestPattern'] || changes['mvtContentType']
   if (changes['matchByContentType']) {
     applyMatchMode(Boolean(changes['matchByContentType'].newValue))
   }
@@ -353,7 +383,7 @@ chrome.storage.local.onChanged.addListener((changes) => {
   if (changes['mvtContentType']) {
     applyContentType(changes['mvtContentType'].newValue?.toString() ?? '')
   }
-  showMatchValue()
+  if (matchChanged) showMatchValue()
 })
 
 // Register DOM event listeners

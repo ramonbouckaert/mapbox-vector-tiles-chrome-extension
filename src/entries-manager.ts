@@ -2,7 +2,17 @@ import { VectorTile } from '@mapbox/vector-tile'
 import { PbfReader } from 'pbf'
 import type { GeoJSON } from 'geojson'
 import { TableEntry, TileStatistics } from './types'
-import {combineHeaders, extractTileCoords, formatTileId, hashTableEntry, isTileEmpty, MVT_CONTENT_TYPES, tileToGeoJson} from './utils'
+import {
+  combineHeaders,
+  extractTileCoords,
+  formatTileId,
+  hashTableEntry,
+  isTileEmpty,
+  MAX_TABLE_ENTRIES,
+  MVT_CONTENT_TYPES,
+  NEVER_MATCHES,
+  tileToGeoJson,
+} from './utils'
 import { TileStore } from './tile-store'
 
 export class EntriesManager {
@@ -16,13 +26,13 @@ export class EntriesManager {
   trackOnlySuccessfulResponse = false
   matchByContentType = true
   mvtContentType: string = MVT_CONTENT_TYPES[0]
-  mvtRequestPatternRegExp: RegExp = /[^\s\S]/
+  mvtRequestPatternRegExp: RegExp = NEVER_MATCHES
 
   constructor(
     private readonly tabId: string,
     private readonly onAdd: (entry: TableEntry) => Promise<void>,
     private readonly onUpdate: (entry: TableEntry) => Promise<void>,
-    private readonly onRemove: (entry: TableEntry) => Promise<void>
+    private readonly onRemove: (entry: TableEntry) => Promise<void>,
   ) {
     this.tileStore = new TileStore(tabId)
   }
@@ -44,6 +54,23 @@ export class EntriesManager {
           : ''),
     )
     chrome.devtools.inspectedWindow.eval(`console.warn(${JSON.stringify(message)})`)
+  }
+
+  private async removeEntry(entry: TableEntry): Promise<void> {
+    const index = this.entries.indexOf(entry)
+    if (index !== -1) this.entries.splice(index, 1)
+    await this.onRemove(entry)
+  }
+
+  // Drops the oldest rows once the table exceeds its cap, discarding their
+  // stored tiles too so the object store does not grow unbounded either.
+  private async evictOverflow(): Promise<void> {
+    while (this.entries.length > MAX_TABLE_ENTRIES) {
+      const oldest = this.entries.shift()
+      if (!oldest) return
+      await this.tileStore.delete(await hashTableEntry(oldest)).catch(() => {})
+      await this.onRemove(oldest)
+    }
   }
 
   private async fetchFromNetwork(entry: TableEntry): Promise<Blob> {
@@ -93,6 +120,7 @@ export class EntriesManager {
 
     this.entries.push(pendingEntry)
     await this.onAdd(pendingEntry)
+    await this.evictOverflow()
 
     httpEntry.getContent(async (content, encoding) => {
       if (!this.entries.includes(pendingEntry)) return
@@ -125,20 +153,14 @@ export class EntriesManager {
 
       const finishEmpty = async (data?: Uint8Array<ArrayBuffer>) => {
         extra.isEmpty = true
-        if (!this.trackEmptyResponse) {
-          const index = this.entries.indexOf(pendingEntry)
-          if (index !== -1) this.entries.splice(index, 1)
-          await this.onRemove(pendingEntry)
-        }
+        if (!this.trackEmptyResponse) await this.removeEntry(pendingEntry)
         await finish(data)
       }
 
       const finishNotSuccessful = async (data?: Uint8Array<ArrayBuffer>) => {
         extra.isValid = false
         if (this.trackOnlySuccessfulResponse) {
-          const index = this.entries.indexOf(pendingEntry)
-          if (index !== -1) this.entries.splice(index, 1)
-          await this.onRemove(pendingEntry)
+          await this.removeEntry(pendingEntry)
           return
         }
         await finish(data)

@@ -1,9 +1,17 @@
-import { TableEntry } from './types'
+import type { TableEntry } from './types'
 import { Hashery } from 'hashery'
-import {VectorTile} from "@mapbox/vector-tile";
-import type {Feature, GeoJSON} from "geojson";
+import type { VectorTile } from '@mapbox/vector-tile'
+import type { Feature, GeoJSON } from 'geojson'
 
 export const PORT_PREFIX = 'devtools-mapbox-vector-tiles-'
+
+// Oldest rows are dropped past this point so a long panning session cannot grow
+// the table (and its backing store) without bound.
+export const MAX_TABLE_ENTRIES = 1000
+
+// Matches nothing - used until a pattern is configured, and whenever the pattern
+// box is left empty.
+export const NEVER_MATCHES = /[^\s\S]/
 
 // Suggested values offered by the "Capture by" autocomplete. The first entry of
 // each list is also the default used when nothing has been configured yet.
@@ -68,6 +76,22 @@ export const extractTileCoords = (url: string): { z: number; x: number; y: numbe
   const last = matches[matches.length - 1]
   if (!last) return undefined
   return { z: parseInt(last[1] ?? ''), x: parseInt(last[2] ?? ''), y: parseInt(last[3] ?? '') }
+}
+
+// Coordinates are not always known in content-type mode, so fall back to the
+// URL's last path segment rather than emitting a "NaN_NaN_NaN.mvt" download.
+export const tileFileName = (entry: TableEntry): string => {
+  if ([entry.z, entry.x, entry.y].every((n) => Number.isFinite(n))) {
+    return `${entry.z}_${entry.x}_${entry.y}.mvt`
+  }
+  let lastSegment: string | undefined
+  try {
+    lastSegment = new URL(entry.url).pathname.split('/').filter(Boolean).pop()
+  } catch {
+    lastSegment = undefined
+  }
+  const base = (lastSegment ?? '').replace(/\.[^.]*$/, '').replace(/[^\w.-]+/g, '_')
+  return `${base || 'tile'}.mvt`
 }
 
 export const isTableEntry = (a: unknown): a is TableEntry =>

@@ -14,10 +14,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": true,
-    "types": ["chrome"]
+    "types": ["chrome", "node"]
   },
-  "include": ["src"],
+  "include": ["src", "test"],
   "exclude": ["src/manifest.ts"]
 }

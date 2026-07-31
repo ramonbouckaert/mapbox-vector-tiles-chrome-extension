@@ -16,6 +16,7 @@
   ],
   "description": "Parser for loaded Mapbox Vector Tiles",
   "type": "module",
+  "private": true,
   "license": "MIT",
   "keywords": [
     "chrome-extension",
@@ -28,9 +29,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && tsc -p tsconfig.node.json && vite build",
+    "test": "node --test \"test/**/*.test.ts\"",
     "preview": "vite preview",
-    "fmt": "prettier --write '**/*.{ts,json,css,scss,md}'",
+    "fmt": "prettier --write '**/*.{ts,json,css,scss,md,html}'",
     "zip": "npm run build && node src/zip.js"
   },
   "dependencies": {
@@ -44,6 +46,7 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.7.1",
     "@types/chrome": "^0.2.2",
+    "@types/node": "^26.1.2",
     "gulp": "^5.0.1",
     "gulp-zip": "^6.1.0",
     "prettier": "^3.9.6",

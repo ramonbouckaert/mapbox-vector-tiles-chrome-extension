@@ -52,6 +52,18 @@ export class TileStore {
     })
   }
 
+  async delete(requestHash: string): Promise<void> {
+    const inspectedTabId = this.inspectedTabId
+    if (!inspectedTabId) throw new Error('TileStore: inspectedTabId required for delete()')
+    const db = await this.db
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite')
+      tx.objectStore(STORE_NAME).delete([inspectedTabId, requestHash])
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  }
+
   async clearForTab(tabId: string): Promise<void> {
     const db = await this.db
     return new Promise((resolve, reject) => {
