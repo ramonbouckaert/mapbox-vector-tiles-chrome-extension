@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "読み込まれた Mapbox ベクタータイルのパーサー" },
+  "clearAll": { "message": "すべてクリア" },
+  "trackEmptyResponses": { "message": "空のレスポンスも記録" },
+  "trackOnlySuccessfulResponses": { "message": "成功したレスポンスのみ記録" },
+  "captureBy": { "message": "取得方法" },
+  "modeAutomatic": { "message": "自動" },
+  "modeContentType": { "message": "コンテンツタイプ" },
+  "modeUrlPattern": { "message": "URL パターン" },
+  "contentTypeHint": { "message": "取得対象とするレスポンスのコンテンツタイプ" },
+  "urlPatternHint": { "message": "リクエスト URL に対して照合する正規表現" },
+  "legendSuccess": { "message": "成功" },
+  "legendEmpty": { "message": "成功（空）" },
+  "legendFailed": { "message": "失敗またはキャンセル" },
+  "tilesTableLabel": { "message": "読み込まれたベクタータイル" },
+  "columnStatus": { "message": "ステータス" },
+  "columnBytes": { "message": "バイト" },
+  "columnUrl": { "message": "URL" },
+  "columnLayers": { "message": "Σ レイヤー" },
+  "columnFeatures": { "message": "レイヤー: Σ フィーチャ" },
+  "columnStarted": { "message": "#開始" },
+  "columnEnded": { "message": "#終了" },
+  "columnTime": { "message": "時間" },
+  "loadingTile": { "message": "タイルを JSON として読み込んでいます..." },
+  "loadingTileWithSize": {
+    "message": "タイルを JSON として読み込んでいます（元のサイズ $SIZE$）...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "タイル $TILE$ の読み込みに失敗しました",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "保存されたタイル $TILE$ を読み取れません。再取得します...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "ネットワークレスポンスからタイル $TILE$ のベクターデータを読み取れません（デコード後のサイズ $SIZE$、期待値 $EXPECTED$）。ボディの読み取り中にリクエストが中断された可能性があります。",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "不明" },
+  "usedLibraries": { "message": "使用ライブラリ:" },
+  "sourceCode": { "message": "ソースコード:" },
+  "originalSource": { "message": "オリジナル:" }
+}

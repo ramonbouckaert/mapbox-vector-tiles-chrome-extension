@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "Parser voor geladen Mapbox Vector Tiles" },
+  "clearAll": { "message": "Alles wissen" },
+  "trackEmptyResponses": { "message": "Lege reacties bijhouden" },
+  "trackOnlySuccessfulResponses": { "message": "Alleen geslaagde reacties bijhouden" },
+  "captureBy": { "message": "Vastleggen op" },
+  "modeAutomatic": { "message": "Automatisch" },
+  "modeContentType": { "message": "Inhoudstype" },
+  "modeUrlPattern": { "message": "URL-patroon" },
+  "contentTypeHint": { "message": "Inhoudstype van de reactie om vast te leggen" },
+  "urlPatternHint": { "message": "Reguliere expressie die op de aanvraag-URL wordt toegepast" },
+  "legendSuccess": { "message": "Geslaagd" },
+  "legendEmpty": { "message": "Geslaagd maar leeg" },
+  "legendFailed": { "message": "Mislukt of geannuleerd" },
+  "tilesTableLabel": { "message": "Geladen vectortegels" },
+  "columnStatus": { "message": "status" },
+  "columnBytes": { "message": "bytes" },
+  "columnUrl": { "message": "url" },
+  "columnLayers": { "message": "Σ lagen" },
+  "columnFeatures": { "message": "laag: Σ objecten" },
+  "columnStarted": { "message": "nr. start" },
+  "columnEnded": { "message": "nr. eind" },
+  "columnTime": { "message": "tijd" },
+  "loadingTile": { "message": "Tegel als JSON laden..." },
+  "loadingTileWithSize": {
+    "message": "Tegel als JSON laden (oorspronkelijke grootte $SIZE$)...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Laden van tegel $TILE$ is mislukt",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "Kan de opgeslagen tegel $TILE$ niet lezen. De tegel wordt opnieuw opgehaald...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "Kan geen vectortegel lezen uit de netwerkreactie voor tegel $TILE$ (gedecodeerde grootte $SIZE$, verwacht $EXPECTED$). De aanvraag is waarschijnlijk afgebroken tijdens het lezen van de inhoud.",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "onbekend" },
+  "usedLibraries": { "message": "Gebruikte bibliotheken:" },
+  "sourceCode": { "message": "Broncode:" },
+  "originalSource": { "message": "Origineel:" }
+}

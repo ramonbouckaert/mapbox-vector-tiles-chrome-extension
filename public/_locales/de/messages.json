@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "Parser für geladene Mapbox Vector Tiles" },
+  "clearAll": { "message": "Alles löschen" },
+  "trackEmptyResponses": { "message": "Leere Antworten erfassen" },
+  "trackOnlySuccessfulResponses": { "message": "Nur erfolgreiche Antworten erfassen" },
+  "captureBy": { "message": "Erfassen nach" },
+  "modeAutomatic": { "message": "Automatisch" },
+  "modeContentType": { "message": "Inhaltstyp" },
+  "modeUrlPattern": { "message": "URL-Muster" },
+  "contentTypeHint": { "message": "Zu erfassender Inhaltstyp der Antwort" },
+  "urlPatternHint": { "message": "Regulärer Ausdruck, der auf die Anfrage-URL angewendet wird" },
+  "legendSuccess": { "message": "Erfolgreich" },
+  "legendEmpty": { "message": "Erfolgreich, aber leer" },
+  "legendFailed": { "message": "Fehlgeschlagen oder abgebrochen" },
+  "tilesTableLabel": { "message": "Geladene Vektorkacheln" },
+  "columnStatus": { "message": "Status" },
+  "columnBytes": { "message": "Bytes" },
+  "columnUrl": { "message": "URL" },
+  "columnLayers": { "message": "Σ Ebenen" },
+  "columnFeatures": { "message": "Ebene: Σ Objekte" },
+  "columnStarted": { "message": "Nr. Start" },
+  "columnEnded": { "message": "Nr. Ende" },
+  "columnTime": { "message": "Dauer" },
+  "loadingTile": { "message": "Kachel wird als JSON geladen..." },
+  "loadingTileWithSize": {
+    "message": "Kachel wird als JSON geladen (Originalgröße $SIZE$)...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Laden der Kachel $TILE$ fehlgeschlagen",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "Die gespeicherte Kachel $TILE$ kann nicht gelesen werden. Sie wird erneut abgerufen...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "Aus der Netzwerkantwort für Kachel $TILE$ konnte keine Vektorkachel gelesen werden (dekodierte Größe $SIZE$, erwartet $EXPECTED$). Die Anfrage wurde vermutlich während des Lesens des Antworttexts abgebrochen.",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "unbekannt" },
+  "usedLibraries": { "message": "Verwendete Bibliotheken:" },
+  "sourceCode": { "message": "Quellcode:" },
+  "originalSource": { "message": "Original:" }
+}

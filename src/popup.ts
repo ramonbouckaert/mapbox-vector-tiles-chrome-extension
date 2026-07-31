@@ -1,4 +1,7 @@
 import packageData from '../package.json'
+import { localizeDocument } from './i18n'
+
+localizeDocument()
 
 // Versions come from package.json so this list cannot drift out of date; only
 // the display name and license URL need maintaining here.

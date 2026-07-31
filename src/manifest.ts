@@ -5,7 +5,8 @@ const isDev = process.env.NODE_ENV == 'development'
 
 export default defineManifest({
   name: `${packageData.displayName || packageData.name}${isDev ? ` ➡️ Dev` : ''}`,
-  description: packageData.description,
+  description: '__MSG_extensionDescription__',
+  default_locale: 'en',
   version: packageData.version,
   manifest_version: 3,
   permissions: ['storage'],

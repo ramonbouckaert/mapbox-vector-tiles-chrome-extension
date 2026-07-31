@@ -16,6 +16,7 @@ import {
   tileToGeoJson,
 } from './utils'
 import type { MatchMode, TileCoords } from './utils'
+import { t } from './i18n'
 import { TileStore } from './tile-store'
 
 export class EntriesManager {
@@ -46,10 +47,11 @@ export class EntriesManager {
     expectedSize: number,
     err?: unknown,
   ): void {
-    const message =
-      `Cannot read Pbf from network response (decoded size = ${data ? data.length : 'unavailable'}` +
-      (expectedSize !== -1 ? `, expectedSize = ${expectedSize}` : '') +
-      `) for tile ${formatTileId(entry)}. Probably the request was aborted while reading of response body.`
+    const message = t('warnUnreadableTile', [
+      formatTileId(entry),
+      data ? String(data.length) : t('valueUnknown'),
+      expectedSize !== -1 ? String(expectedSize) : t('valueUnknown'),
+    ])
     console.warn(
       message +
         (err
@@ -254,7 +256,7 @@ export class EntriesManager {
       errors.push(error)
     }
 
-    const message = `Cannot read Pbf from stored tile ${formatTileId(entry)}. MVT will be fetched again...`
+    const message = t('warnStoredTileMissing', formatTileId(entry))
     console.warn(message, ...errors)
     chrome.devtools.inspectedWindow.eval(`console.warn(${JSON.stringify(message)})`)
 
@@ -264,7 +266,7 @@ export class EntriesManager {
       errors.push(error)
     }
 
-    throw Error(`Loading failed for tile ${formatTileId(entry)}`, { cause: errors })
+    throw Error(t('errorLoadingTile', formatTileId(entry)), { cause: errors })
   }
 
   async getGeoJsonForEntry(
@@ -281,7 +283,7 @@ export class EntriesManager {
         Number.isFinite(entry.y) ? entry.y : 0,
       )
     } catch (error) {
-      const message = `... Loading failed for tile ${formatTileId(entry)}`
+      const message = t('errorLoadingTile', formatTileId(entry))
       console.error(message, error)
       chrome.devtools.inspectedWindow.eval(`console.error(${JSON.stringify(message)})`)
       return { error: message }

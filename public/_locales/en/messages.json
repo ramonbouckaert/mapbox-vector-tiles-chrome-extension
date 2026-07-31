@@ -1,0 +1,140 @@
+{
+  "extensionDescription": {
+    "message": "Parser for loaded Mapbox Vector Tiles",
+    "description": "Extension description shown in the Chrome Web Store and extension manager"
+  },
+  "clearAll": {
+    "message": "Clear All",
+    "description": "Link that empties the table of captured tiles"
+  },
+  "trackEmptyResponses": {
+    "message": "Track Empty Responses",
+    "description": "Checkbox label; keeps rows for tiles that contain no features"
+  },
+  "trackOnlySuccessfulResponses": {
+    "message": "Track Only Successful Responses",
+    "description": "Checkbox label; drops rows for failed or cancelled requests"
+  },
+  "captureBy": {
+    "message": "Capture by",
+    "description": "Label for the dropdown choosing how requests are recognised as tiles"
+  },
+  "modeAutomatic": {
+    "message": "Automatic",
+    "description": "Capture mode that needs no configuration"
+  },
+  "modeContentType": {
+    "message": "Content Type",
+    "description": "Capture mode that matches one response content type"
+  },
+  "modeUrlPattern": {
+    "message": "URL Pattern",
+    "description": "Capture mode that matches a regular expression against the URL"
+  },
+  "contentTypeHint": {
+    "message": "Response content type to capture",
+    "description": "Tooltip on the value box while in Content Type mode"
+  },
+  "urlPatternHint": {
+    "message": "Regular expression matched against the request URL",
+    "description": "Tooltip on the value box while in URL Pattern mode"
+  },
+  "legendSuccess": {
+    "message": "Success",
+    "description": "Legend entry for a tile that loaded and contains features"
+  },
+  "legendEmpty": {
+    "message": "Success but Empty",
+    "description": "Legend entry for a tile that loaded but contains no features"
+  },
+  "legendFailed": {
+    "message": "No Success or Cancelled",
+    "description": "Legend entry for a request that failed or was cancelled"
+  },
+  "tilesTableLabel": {
+    "message": "Loaded vector tiles",
+    "description": "Accessible name of the table of captured tiles"
+  },
+  "columnStatus": {
+    "message": "status",
+    "description": "Column header: HTTP status code"
+  },
+  "columnBytes": {
+    "message": "bytes",
+    "description": "Column header: size of the tile in bytes"
+  },
+  "columnUrl": {
+    "message": "url",
+    "description": "Column header: request URL"
+  },
+  "columnLayers": {
+    "message": "Σ layers",
+    "description": "Column header: total number of layers in the tile. Σ means sum/total"
+  },
+  "columnFeatures": {
+    "message": "layer: Σ features",
+    "description": "Column header: feature count per layer. Σ means sum/total"
+  },
+  "columnStarted": {
+    "message": "#started",
+    "description": "Column header: position of the request in start order"
+  },
+  "columnEnded": {
+    "message": "#ended",
+    "description": "Column header: position of the request in completion order"
+  },
+  "columnTime": {
+    "message": "time",
+    "description": "Column header: how long the request took"
+  },
+  "loadingTile": {
+    "message": "Loading tile as JSON...",
+    "description": "Shown in the dialog while a tile is being converted to GeoJSON"
+  },
+  "loadingTileWithSize": {
+    "message": "Loading tile as JSON (original size $SIZE$)...",
+    "description": "Shown in the dialog while a large tile is being converted to GeoJSON",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Loading failed for tile $TILE$",
+    "description": "Error logged when a tile cannot be loaded from the store or the network",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "Cannot read the stored tile $TILE$. The tile will be fetched again...",
+    "description": "Warning logged before falling back to refetching a tile over the network",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "Cannot read a vector tile from the network response for tile $TILE$ (decoded size $SIZE$, expected $EXPECTED$). The request was probably aborted while its body was being read.",
+    "description": "Warning logged when a captured response body cannot be decoded",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": {
+    "message": "unknown",
+    "description": "Stands in for a size that could not be determined"
+  },
+  "usedLibraries": {
+    "message": "Used libraries:",
+    "description": "Heading in the popup above the list of third party libraries"
+  },
+  "sourceCode": {
+    "message": "Source code:",
+    "description": "Heading in the popup above the source repository links"
+  },
+  "originalSource": {
+    "message": "Original:",
+    "description": "Label in the popup for the repository this extension was forked from"
+  }
+}

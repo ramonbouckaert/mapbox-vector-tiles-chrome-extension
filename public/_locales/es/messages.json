@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "Analizador de Mapbox Vector Tiles cargados" },
+  "clearAll": { "message": "Borrar todo" },
+  "trackEmptyResponses": { "message": "Registrar respuestas vacías" },
+  "trackOnlySuccessfulResponses": { "message": "Registrar solo respuestas correctas" },
+  "captureBy": { "message": "Capturar por" },
+  "modeAutomatic": { "message": "Automático" },
+  "modeContentType": { "message": "Tipo de contenido" },
+  "modeUrlPattern": { "message": "Patrón de URL" },
+  "contentTypeHint": { "message": "Tipo de contenido de la respuesta que se capturará" },
+  "urlPatternHint": { "message": "Expresión regular aplicada a la URL de la solicitud" },
+  "legendSuccess": { "message": "Correcto" },
+  "legendEmpty": { "message": "Correcto pero vacío" },
+  "legendFailed": { "message": "Fallido o cancelado" },
+  "tilesTableLabel": { "message": "Teselas vectoriales cargadas" },
+  "columnStatus": { "message": "estado" },
+  "columnBytes": { "message": "bytes" },
+  "columnUrl": { "message": "url" },
+  "columnLayers": { "message": "Σ capas" },
+  "columnFeatures": { "message": "capa: Σ entidades" },
+  "columnStarted": { "message": "nº inicio" },
+  "columnEnded": { "message": "nº fin" },
+  "columnTime": { "message": "tiempo" },
+  "loadingTile": { "message": "Cargando la tesela como JSON..." },
+  "loadingTileWithSize": {
+    "message": "Cargando la tesela como JSON (tamaño original $SIZE$)...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Error al cargar la tesela $TILE$",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "No se puede leer la tesela almacenada $TILE$. Se volverá a descargar...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "No se puede leer una tesela vectorial de la respuesta de red para la tesela $TILE$ (tamaño descodificado $SIZE$, esperado $EXPECTED$). Probablemente la solicitud se canceló mientras se leía su cuerpo.",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "desconocido" },
+  "usedLibraries": { "message": "Bibliotecas utilizadas:" },
+  "sourceCode": { "message": "Código fuente:" },
+  "originalSource": { "message": "Original:" }
+}

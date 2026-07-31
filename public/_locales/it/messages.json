@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "Parser per i Mapbox Vector Tiles caricati" },
+  "clearAll": { "message": "Cancella tutto" },
+  "trackEmptyResponses": { "message": "Registra risposte vuote" },
+  "trackOnlySuccessfulResponses": { "message": "Registra solo risposte riuscite" },
+  "captureBy": { "message": "Cattura per" },
+  "modeAutomatic": { "message": "Automatico" },
+  "modeContentType": { "message": "Tipo di contenuto" },
+  "modeUrlPattern": { "message": "Modello URL" },
+  "contentTypeHint": { "message": "Tipo di contenuto della risposta da catturare" },
+  "urlPatternHint": { "message": "Espressione regolare applicata all'URL della richiesta" },
+  "legendSuccess": { "message": "Riuscito" },
+  "legendEmpty": { "message": "Riuscito ma vuoto" },
+  "legendFailed": { "message": "Non riuscito o annullato" },
+  "tilesTableLabel": { "message": "Tile vettoriali caricati" },
+  "columnStatus": { "message": "stato" },
+  "columnBytes": { "message": "byte" },
+  "columnUrl": { "message": "url" },
+  "columnLayers": { "message": "Σ livelli" },
+  "columnFeatures": { "message": "livello: Σ elementi" },
+  "columnStarted": { "message": "n° inizio" },
+  "columnEnded": { "message": "n° fine" },
+  "columnTime": { "message": "durata" },
+  "loadingTile": { "message": "Caricamento del tile come JSON..." },
+  "loadingTileWithSize": {
+    "message": "Caricamento del tile come JSON (dimensione originale $SIZE$)...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Caricamento del tile $TILE$ non riuscito",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "Impossibile leggere il tile memorizzato $TILE$. Verrà scaricato di nuovo...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "Impossibile leggere un tile vettoriale dalla risposta di rete per il tile $TILE$ (dimensione decodificata $SIZE$, prevista $EXPECTED$). La richiesta è stata probabilmente interrotta durante la lettura del corpo.",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "sconosciuta" },
+  "usedLibraries": { "message": "Librerie utilizzate:" },
+  "sourceCode": { "message": "Codice sorgente:" },
+  "originalSource": { "message": "Originale:" }
+}

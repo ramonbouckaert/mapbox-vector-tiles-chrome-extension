@@ -15,7 +15,10 @@ import {
   tileFileName,
 } from './utils'
 import type { MatchMode } from './utils'
+import { localizeDocument, t } from './i18n'
 import { EntriesManager } from './entries-manager'
+
+localizeDocument()
 
 // Deps
 const tabId = chrome.devtools.inspectedWindow.tabId
@@ -190,7 +193,7 @@ const toMvtLink = (entry: TableEntry): HTMLAnchorElement => {
       const blob = await entriesManager.getBlobForEntry(entry)
       saveFromBinaryData(await blob.arrayBuffer(), tileFileName(entry))
     } catch (error) {
-      const message = `Loading failed for tile ${formatTileId(entry)}`
+      const message = t('errorLoadingTile', formatTileId(entry))
       console.error(message, error)
       chrome.devtools.inspectedWindow.eval(`console.error(${JSON.stringify(message)})`)
     }
@@ -318,9 +321,7 @@ const showMatchValue = () => {
   if (currentMatchMode() === 'automatic') return
   const contentTypeMode = isContentTypeMode()
   const value = contentTypeMode ? mvtContentType : mvtRequestPattern
-  matchValueText.title = contentTypeMode
-    ? 'Response content type to capture'
-    : 'Regular expression matched against the request URL'
+  matchValueText.title = contentTypeMode ? t('contentTypeHint') : t('urlPatternHint')
   // Only reassign when it really differs - assigning resets the caret, and this
   // also runs in response to our own storage writes while the user is typing.
   if (matchValueText.value !== value) matchValueText.value = value
@@ -480,15 +481,21 @@ document.addEventListener('click', async (e: MouseEvent) => {
     const entry = (node && node instanceof Element && 'entry' in node && node.entry) || undefined
     if (isTableEntry(entry)) {
       const isLarge = entry.tileSize ? entry.tileSize > 200_000 : true
-      viewTileContainer.innerHTML = isLarge
-        ? `<div id="loadingIndicator">Loading tile as JSON${entry.tileSize ? ` (original size ${prettyBytes(entry.tileSize)})` : ''}...</div>`
-        : ''
+      viewTileContainer.replaceChildren()
+      if (isLarge) {
+        const loadingIndicator = document.createElement('div')
+        loadingIndicator.id = 'loadingIndicator'
+        loadingIndicator.textContent = entry.tileSize
+          ? t('loadingTileWithSize', prettyBytes(entry.tileSize))
+          : t('loadingTile')
+        viewTileContainer.appendChild(loadingIndicator)
+      }
       const geoJsonOrJsonError = await entriesManager.getGeoJsonForEntry(entry)
       if (dialog) dialog.style.display = 'block'
       // If the tile is large, await an animation frame to ensure the dialog has been opened with the loading indicator
       if (isLarge) {
         await new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)))
-        viewTileContainer.innerHTML = ''
+        viewTileContainer.replaceChildren()
       }
       setTimeout(async () => {
         const { createJSONEditor } = await import('vanilla-jsoneditor/standalone.js')

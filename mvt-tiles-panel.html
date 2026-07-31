@@ -383,22 +383,26 @@
   <body>
     <div id="settings-panel">
       <div class="setting-control">
-        <a id="clear" href="javascript:void(0)">Clear All</a>
+        <a id="clear" href="javascript:void(0)" data-i18n="clearAll">Clear All</a>
       </div>
       <div class="setting-control">
-        <label for="trackEmptyResponse">Track Empty Responses</label>
+        <label for="trackEmptyResponse" data-i18n="trackEmptyResponses"
+          >Track Empty Responses</label
+        >
         <input type="checkbox" id="trackEmptyResponse" />
       </div>
       <div class="setting-control">
-        <label for="trackOnlySuccessfulResponse">Track Only Successful Responses</label>
+        <label for="trackOnlySuccessfulResponse" data-i18n="trackOnlySuccessfulResponses"
+          >Track Only Successful Responses</label
+        >
         <input type="checkbox" id="trackOnlySuccessfulResponse" />
       </div>
       <div class="setting-control">
-        <label for="matchMode">Capture by</label>
+        <label for="matchMode" data-i18n="captureBy">Capture by</label>
         <select id="matchMode">
-          <option value="automatic">Automatic</option>
-          <option value="contentType">Content Type</option>
-          <option value="urlPattern">URL Pattern</option>
+          <option value="automatic" data-i18n="modeAutomatic">Automatic</option>
+          <option value="contentType" data-i18n="modeContentType">Content Type</option>
+          <option value="urlPattern" data-i18n="modeUrlPattern">URL Pattern</option>
         </select>
         <span class="combo" id="matchValueCombo">
           <input
@@ -416,26 +420,35 @@
       </div>
       <div class="setting-control right">
         <ul class="legend">
-          <li class="success"><span>Success</span></li>
-          <li class="empty-tile"><span>Success but Empty</span></li>
-          <li class="no-success-tile"><span>No Success or Cancelled</span></li>
+          <li class="success"><span data-i18n="legendSuccess">Success</span></li>
+          <li class="empty-tile"><span data-i18n="legendEmpty">Success but Empty</span></li>
+          <li class="no-success-tile">
+            <span data-i18n="legendFailed">No Success or Cancelled</span>
+          </li>
         </ul>
       </div>
     </div>
 
-    <div id="tilesTable" role="table" aria-label="Loaded vector tiles">
+    <div
+      id="tilesTable"
+      role="table"
+      aria-label="Loaded vector tiles"
+      data-i18n-aria-label="tilesTableLabel"
+    >
       <div role="row" id="tilesTableHeaderRow">
-        <div role="columnheader">status</div>
+        <div role="columnheader" data-i18n="columnStatus">status</div>
         <div role="columnheader">z</div>
         <div role="columnheader">x</div>
         <div role="columnheader">y</div>
-        <div role="columnheader">bytes</div>
-        <div role="columnheader">url</div>
-        <div role="columnheader" class="wrap-content">&#8721; layers</div>
-        <div role="columnheader" class="wrap-content">layer: &#8721; features</div>
-        <div role="columnheader">#started</div>
-        <div role="columnheader">#ended</div>
-        <div role="columnheader">time</div>
+        <div role="columnheader" data-i18n="columnBytes">bytes</div>
+        <div role="columnheader" data-i18n="columnUrl">url</div>
+        <div role="columnheader" class="wrap-content" data-i18n="columnLayers">&#8721; layers</div>
+        <div role="columnheader" class="wrap-content" data-i18n="columnFeatures">
+          layer: &#8721; features
+        </div>
+        <div role="columnheader" data-i18n="columnStarted">#started</div>
+        <div role="columnheader" data-i18n="columnEnded">#ended</div>
+        <div role="columnheader" data-i18n="columnTime">time</div>
       </div>
     </div>
     <div id="viewTileDialog" class="modal">

@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "Парсер загруженных векторных тайлов Mapbox" },
+  "clearAll": { "message": "Очистить всё" },
+  "trackEmptyResponses": { "message": "Отслеживать пустые ответы" },
+  "trackOnlySuccessfulResponses": { "message": "Отслеживать только успешные ответы" },
+  "captureBy": { "message": "Захват по" },
+  "modeAutomatic": { "message": "Автоматически" },
+  "modeContentType": { "message": "Тип содержимого" },
+  "modeUrlPattern": { "message": "Шаблон URL" },
+  "contentTypeHint": { "message": "Тип содержимого ответа для захвата" },
+  "urlPatternHint": { "message": "Регулярное выражение, применяемое к URL запроса" },
+  "legendSuccess": { "message": "Успешно" },
+  "legendEmpty": { "message": "Успешно, но пусто" },
+  "legendFailed": { "message": "Ошибка или отменено" },
+  "tilesTableLabel": { "message": "Загруженные векторные тайлы" },
+  "columnStatus": { "message": "статус" },
+  "columnBytes": { "message": "байты" },
+  "columnUrl": { "message": "url" },
+  "columnLayers": { "message": "Σ слоёв" },
+  "columnFeatures": { "message": "слой: Σ объектов" },
+  "columnStarted": { "message": "№ начала" },
+  "columnEnded": { "message": "№ конца" },
+  "columnTime": { "message": "время" },
+  "loadingTile": { "message": "Загрузка тайла в формате JSON..." },
+  "loadingTileWithSize": {
+    "message": "Загрузка тайла в формате JSON (исходный размер $SIZE$)...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Не удалось загрузить тайл $TILE$",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "Не удалось прочитать сохранённый тайл $TILE$. Он будет загружен повторно...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "Не удалось прочитать векторный тайл из сетевого ответа для тайла $TILE$ (размер после декодирования $SIZE$, ожидалось $EXPECTED$). Вероятно, запрос был прерван во время чтения тела ответа.",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "неизвестно" },
+  "usedLibraries": { "message": "Используемые библиотеки:" },
+  "sourceCode": { "message": "Исходный код:" },
+  "originalSource": { "message": "Оригинал:" }
+}

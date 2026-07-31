@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "解析已載入的 Mapbox 向量圖磚" },
+  "clearAll": { "message": "全部清除" },
+  "trackEmptyResponses": { "message": "記錄空白回應" },
+  "trackOnlySuccessfulResponses": { "message": "僅記錄成功的回應" },
+  "captureBy": { "message": "擷取方式" },
+  "modeAutomatic": { "message": "自動" },
+  "modeContentType": { "message": "內容類型" },
+  "modeUrlPattern": { "message": "URL 模式" },
+  "contentTypeHint": { "message": "要擷取的回應內容類型" },
+  "urlPatternHint": { "message": "與請求 URL 比對的正規表示式" },
+  "legendSuccess": { "message": "成功" },
+  "legendEmpty": { "message": "成功但為空" },
+  "legendFailed": { "message": "失敗或已取消" },
+  "tilesTableLabel": { "message": "已載入的向量圖磚" },
+  "columnStatus": { "message": "狀態" },
+  "columnBytes": { "message": "位元組" },
+  "columnUrl": { "message": "網址" },
+  "columnLayers": { "message": "Σ 圖層" },
+  "columnFeatures": { "message": "圖層：Σ 圖徵" },
+  "columnStarted": { "message": "#開始" },
+  "columnEnded": { "message": "#結束" },
+  "columnTime": { "message": "耗時" },
+  "loadingTile": { "message": "正在以 JSON 格式載入圖磚..." },
+  "loadingTileWithSize": {
+    "message": "正在以 JSON 格式載入圖磚（原始大小 $SIZE$）...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "圖磚 $TILE$ 載入失敗",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "無法讀取已儲存的圖磚 $TILE$，將重新取得...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "無法從網路回應中讀取圖磚 $TILE$ 的向量資料（解碼後大小 $SIZE$，預期 $EXPECTED$）。請求可能在讀取回應內容時被中止。",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "未知" },
+  "usedLibraries": { "message": "使用的程式庫：" },
+  "sourceCode": { "message": "原始碼：" },
+  "originalSource": { "message": "原始專案：" }
+}

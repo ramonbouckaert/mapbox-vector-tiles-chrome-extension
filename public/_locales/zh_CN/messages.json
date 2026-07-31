@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "解析已加载的 Mapbox 矢量瓦片" },
+  "clearAll": { "message": "全部清除" },
+  "trackEmptyResponses": { "message": "记录空响应" },
+  "trackOnlySuccessfulResponses": { "message": "仅记录成功的响应" },
+  "captureBy": { "message": "捕获方式" },
+  "modeAutomatic": { "message": "自动" },
+  "modeContentType": { "message": "内容类型" },
+  "modeUrlPattern": { "message": "URL 模式" },
+  "contentTypeHint": { "message": "要捕获的响应内容类型" },
+  "urlPatternHint": { "message": "与请求 URL 匹配的正则表达式" },
+  "legendSuccess": { "message": "成功" },
+  "legendEmpty": { "message": "成功但为空" },
+  "legendFailed": { "message": "失败或已取消" },
+  "tilesTableLabel": { "message": "已加载的矢量瓦片" },
+  "columnStatus": { "message": "状态" },
+  "columnBytes": { "message": "字节" },
+  "columnUrl": { "message": "网址" },
+  "columnLayers": { "message": "Σ 图层" },
+  "columnFeatures": { "message": "图层：Σ 要素" },
+  "columnStarted": { "message": "#开始" },
+  "columnEnded": { "message": "#结束" },
+  "columnTime": { "message": "耗时" },
+  "loadingTile": { "message": "正在以 JSON 格式加载瓦片..." },
+  "loadingTileWithSize": {
+    "message": "正在以 JSON 格式加载瓦片（原始大小 $SIZE$）...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "瓦片 $TILE$ 加载失败",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "无法读取已存储的瓦片 $TILE$，将重新获取...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "无法从网络响应中读取瓦片 $TILE$ 的矢量数据（解码后大小 $SIZE$，预期 $EXPECTED$）。请求可能在读取响应正文时被中止。",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "未知" },
+  "usedLibraries": { "message": "使用的库：" },
+  "sourceCode": { "message": "源代码：" },
+  "originalSource": { "message": "原始项目：" }
+}

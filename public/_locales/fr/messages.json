@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "Analyseur des tuiles vectorielles Mapbox chargées" },
+  "clearAll": { "message": "Tout effacer" },
+  "trackEmptyResponses": { "message": "Enregistrer les réponses vides" },
+  "trackOnlySuccessfulResponses": { "message": "Enregistrer uniquement les réponses réussies" },
+  "captureBy": { "message": "Capturer par" },
+  "modeAutomatic": { "message": "Automatique" },
+  "modeContentType": { "message": "Type de contenu" },
+  "modeUrlPattern": { "message": "Motif d'URL" },
+  "contentTypeHint": { "message": "Type de contenu de la réponse à capturer" },
+  "urlPatternHint": { "message": "Expression régulière appliquée à l'URL de la requête" },
+  "legendSuccess": { "message": "Réussite" },
+  "legendEmpty": { "message": "Réussite mais vide" },
+  "legendFailed": { "message": "Échec ou annulé" },
+  "tilesTableLabel": { "message": "Tuiles vectorielles chargées" },
+  "columnStatus": { "message": "statut" },
+  "columnBytes": { "message": "octets" },
+  "columnUrl": { "message": "url" },
+  "columnLayers": { "message": "Σ couches" },
+  "columnFeatures": { "message": "couche : Σ entités" },
+  "columnStarted": { "message": "n° début" },
+  "columnEnded": { "message": "n° fin" },
+  "columnTime": { "message": "durée" },
+  "loadingTile": { "message": "Chargement de la tuile en JSON..." },
+  "loadingTileWithSize": {
+    "message": "Chargement de la tuile en JSON (taille d'origine $SIZE$)...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Échec du chargement de la tuile $TILE$",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "Impossible de lire la tuile stockée $TILE$. Elle sera téléchargée à nouveau...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "Impossible de lire une tuile vectorielle dans la réponse réseau pour la tuile $TILE$ (taille décodée $SIZE$, attendue $EXPECTED$). La requête a probablement été interrompue pendant la lecture de son corps.",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "inconnue" },
+  "usedLibraries": { "message": "Bibliothèques utilisées :" },
+  "sourceCode": { "message": "Code source :" },
+  "originalSource": { "message": "Original :" }
+}

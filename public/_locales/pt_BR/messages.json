@@ -1,0 +1,55 @@
+{
+  "extensionDescription": { "message": "Analisador de Mapbox Vector Tiles carregados" },
+  "clearAll": { "message": "Limpar tudo" },
+  "trackEmptyResponses": { "message": "Registrar respostas vazias" },
+  "trackOnlySuccessfulResponses": { "message": "Registrar apenas respostas bem-sucedidas" },
+  "captureBy": { "message": "Capturar por" },
+  "modeAutomatic": { "message": "Automático" },
+  "modeContentType": { "message": "Tipo de conteúdo" },
+  "modeUrlPattern": { "message": "Padrão de URL" },
+  "contentTypeHint": { "message": "Tipo de conteúdo da resposta a capturar" },
+  "urlPatternHint": { "message": "Expressão regular aplicada à URL da requisição" },
+  "legendSuccess": { "message": "Sucesso" },
+  "legendEmpty": { "message": "Sucesso, mas vazio" },
+  "legendFailed": { "message": "Sem sucesso ou cancelado" },
+  "tilesTableLabel": { "message": "Tiles vetoriais carregados" },
+  "columnStatus": { "message": "status" },
+  "columnBytes": { "message": "bytes" },
+  "columnUrl": { "message": "url" },
+  "columnLayers": { "message": "Σ camadas" },
+  "columnFeatures": { "message": "camada: Σ feições" },
+  "columnStarted": { "message": "nº início" },
+  "columnEnded": { "message": "nº fim" },
+  "columnTime": { "message": "tempo" },
+  "loadingTile": { "message": "Carregando o tile como JSON..." },
+  "loadingTileWithSize": {
+    "message": "Carregando o tile como JSON (tamanho original $SIZE$)...",
+    "placeholders": {
+      "size": { "content": "$1", "example": "1.2 kB" }
+    }
+  },
+  "errorLoadingTile": {
+    "message": "Falha ao carregar o tile $TILE$",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnStoredTileMissing": {
+    "message": "Não foi possível ler o tile armazenado $TILE$. Ele será baixado novamente...",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" }
+    }
+  },
+  "warnUnreadableTile": {
+    "message": "Não foi possível ler um tile vetorial da resposta de rede para o tile $TILE$ (tamanho decodificado $SIZE$, esperado $EXPECTED$). A requisição provavelmente foi cancelada durante a leitura do corpo.",
+    "placeholders": {
+      "tile": { "content": "$1", "example": "{z: 10, x: 512, y: 384}" },
+      "size": { "content": "$2", "example": "4096" },
+      "expected": { "content": "$3", "example": "8192" }
+    }
+  },
+  "valueUnknown": { "message": "desconhecido" },
+  "usedLibraries": { "message": "Bibliotecas utilizadas:" },
+  "sourceCode": { "message": "Código-fonte:" },
+  "originalSource": { "message": "Original:" }
+}
